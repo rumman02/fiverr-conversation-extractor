@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fiverr Conversation Extractor</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: auto;
+      min-width: 300px;
+      padding: 8px;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      position: relative;
+      overflow-x: hidden;
+      min-height: 520px;
+    }
+    h2 {
+      font-size: 1.4em;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    .error {
+      background-color: #ffe6e6;
+      color: #ff0000;
+    }
+    .progress {
+      background-color: #e6f3ff;
+      color: #0066cc;
+    }
+    
+    /* Progress Bar Styles */
+    .progress-container {
+      width: 100%;
+      margin: 15px 0;
+      background-color: #f5f5f5;
+      border-radius: 10px;
+      position: relative;
+      height: 20px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #1dbf73, #28e086);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+      position: relative;
+    }
+    .progress-bar.indeterminate {
+      width: 50%;
+      background: linear-gradient(90deg, #1dbf73, #28e086);
+      animation: indeterminate-progress 1.5s infinite linear;
+      background-size: 200% 100%;
+    }
+    .progress-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      color: #fff;
+      text-align: center;
+      line-height: 20px;
+      font-size: 12px;
+      text-shadow: 0 0 2px rgba(0,0,0,0.5);
+      font-weight: bold;
+      z-index: 1;
+    }
+    @keyframes indeterminate-progress {
+      0% { background-position: 0% 0; }
+      100% { background-position: 200% 0; }
+    }
+    
+    /* Notification System */
+    .notification-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      width: 280px;
+    }
+    .notification {
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.23);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slide-in 0.3s ease forwards;
+      position: relative;
+      overflow: hidden;
+    }
+    .notification.success {
+      background-color: #1dbf73;
+      color: white;
+      border-left: 5px solid #169e60;
+    }
+    .notification.error {
+      background-color: #e74c3c;
+      color: white;
+      border-left: 5px solid #c0392b;
+    }
+    .notification.info {
+      background-color: #3498db;
+      color: white;
+      border-left: 5px solid #2980b9;
+    }
+    .notification-content {
+      flex: 1;
+    }
+    .notification-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .notification-message {
+      font-size: 13px;
+    }
+    .notification-close {
+      margin-left: 10px;
+      color: rgba(255,255,255,0.8);
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .notification-close:hover {
+      color: white;
+    }
+    .notification-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background-color: rgba(255,255,255,0.4);
+      width: 100%;
+      transform-origin: left;
+      animation: notification-timeout 5s linear forwards;
+    }
+    @keyframes slide-in {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes notification-timeout {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+    
+    .action-button {
+      margin: 4px 0;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      transition: background-color 0.3s ease;
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+    .action-button:hover {
+      background-color: #45a049;
+    }
+    .conversation-actions {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .progress-counter {
+      text-align: center;
+      font-weight: bold;
+      margin: 5px 0;
+      color: #1565c0;
+      font-size: 12px;
+    }
+    .progress-log {
+      margin-top: 8px;
+      padding: 8px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      max-height: 60px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      display: none;
+    }
+    .contacts-section {
+      margin-top: 10px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .contacts-list {
+      max-height: 250px;
+      overflow-y: auto;
+      margin-top: 5px;
+    }
+    .contact-item {
+      padding: 6px 8px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .contact-item:hover {
+      background: #e3f2fd;
+      border-color: #1976d2;
+      transform: translateX(-2px);
+    }
+    .contact-name {
+      font-weight: 500;
+      color: #1976d2;
+      font-size: 13px;
+    }
+    .contact-last-message {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+    .no-contacts {
+      text-align: center;
+      color: #666;
+      padding: 16px;
+    }
+    .attachments-section {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .attachment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      background: white;
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      gap: 8px;
+      min-width: 0;
+    }
+    .attachment-item.selected {
+      background-color: #e3f2fd;
+      border-left: 3px solid #1976d2;
+    }
+    .attachment-wrapper {
+      display: flex;
+      align-items: flex-start;
+      flex: 1;
+      min-width: 0;
+    }
+    .attachment-info {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      word-wrap: break-word;
+      word-break: break-word;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .attachment-name {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .attachment-time {
+      font-size: 11px;
+      color: #666;
+    }
+    .download-btn {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .download-btn:hover {
+      background: #1565c0;
+    }
+    .attachment-list {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    .attachment-item a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    .attachment-item a:hover {
+      text-decoration: underline;
+    }
+    .attachment-button {
+      width: 100%;
+      margin: 5px 0;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #2196F3;
+      color: white;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .attachment-button:hover {
+      background-color: #1976D2;
+    }
+    .loading {
+      text-align: center;
+      padding: 10px;
+      color: #666;
+    }
+    .log-entry {
+      margin: 5px 0;
+      padding: 2px 5px;
+      border-left: 3px solid #1dbf73;
+    }
+    .log-entry.error {
+      border-left-color: #c62828;
+    }
+    .progress-text {
+      margin-top: 8px;
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+    }
+    .mini-progress-container {
+      height: 6px;
+      background-color: #f5f5f5;
+      border-radius: 3px;
+      margin: 5px 0;
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .current-conversation {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      padding: 8px;
+      color: #1565c0;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 400px) {
+      .attachment-item {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .download-btn {
+        margin-top: 6px;
+        width: 100%;
+        padding: 6px;
+      }
+      
+      .attachment-info {
+        margin-right: 0;
+      }
+    }
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 0 5px;
+    }
+
+    .settings-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 20px;
+      padding: 5px;
+      transition: transform 0.2s;
+    }
+
+    .settings-btn:hover {
+      transform: rotate(45deg);
+    }
+
+    .settings-modal {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+
+    .settings-group {
+      margin-bottom: 15px;
+    }
+
+    .settings-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .settings-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+    }
+
+    .modal-title {
+      margin: 0 0 15px 0;
+      color: #1565c0;
+      font-size: 1.2em;
+      text-align: center;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .modal-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .save-btn {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .cancel-btn {
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    .contacts-section h3 {
+      margin-top: 0;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .attachment-checkbox {
+      margin-right: 10px;
+      width: 16px;
+      height: 16px;
+      accent-color: #1976d2;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .attachment-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding: 8px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+    
+    .attachment-select-all {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      color: #333;
+    }
+    
+    .bulk-download-btn {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background-color 0.2s;
+    }
+    
+    .bulk-download-btn:hover {
+      background-color: #1565c0;
+    }
+    
+    .bulk-download-btn:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .attachment-count {
+      margin-left: 5px;
+      font-size: 12px;
+      font-weight: normal;
+      color: #666;
+      background: #e3f2fd;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    /* Update main container styles */
+    .main-container {
+      display: flex;
+      position: relative;
+      transition: width 0.3s ease;
+      width: 300px;
+      min-height: 500px;
+    }
+
+    .main-container.expanded {
+      width: 600px;
+    }
+
+    .main-content {
+      width: 300px;
+      flex-shrink: 0;
+      padding-right: 8px;
+      min-height: 500px;
+    }
+
+    /* Shared panel styles for both contacts and attachments */
+    .side-panel {
+      width: 0;
+      overflow: hidden;
+      background: white;
+      border-left: 1px solid #ddd;
+      transition: width 0.3s ease;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      box-sizing: border-box;
+      margin-top: 10px;
+      height: 500px;
+    }
+
+    .side-panel.expanded {
+      width: 300px;
+      padding: 8px 8px 8px 16px;
+    }
+
+    /* Panel header styles */
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+    }
+
+    .panel-header h3 {
+      margin: 0;
+      font-size: 14px;
+      color: #1976d2;
+    }
+
+    .panel-count {
+      background: #e3f2fd;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #1976d2;
+    }
+    
+    /* Contacts list styles */
+    .contacts-list {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      max-height: 450px;
+    }
+
+    /* Move attachments section to be a side panel */
+    .attachments-panel {
+      display: none;
+    }
+
+    .attachments-panel.expanded {
+      display: flex;
+    }
+
+    #attachmentsList {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      max-height: 450px;
+    }
+
+    /* Add bulk export modal styles */
+    .bulk-export-modal {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: white;
+      border-left: 1px solid #ddd;
+      z-index: 1000;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      transform: translateX(100%);
+    }
+
+    .bulk-export-modal.show {
+      transform: translateX(0);
+    }
+    
+    .bulk-export-content {
+      padding: 20px;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    
+    .bulk-export-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 10px;
+    }
+    
+    .bulk-export-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #1976d2;
+      margin: 0;
+    }
+    
+    .bulk-export-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+    }
+    
+    .bulk-export-options {
+      margin-bottom: 15px;
+    }
+    
+    .export-option {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    
+    .export-option label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .contacts-selection {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .contact-checkbox-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .contact-checkbox-item:last-child {
+      border-bottom: none;
+    }
+    
+    .contact-select-label {
+      margin-left: 8px;
+      font-size: 13px;
+    }
+    
+    .export-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
+    
+    .select-all-contacts {
+      display: flex;
+      align-items: center;
+    }
+    
+    .select-all-contacts label {
+      margin-left: 5px;
+      font-size: 13px;
+    }
+    
+    .export-button {
+      padding: 8px 15px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .export-button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+    }
+    
+    .export-progress {
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+    
+    .export-status {
+      margin-bottom: 10px;
+      font-weight: bold;
+      color: #1976d2;
+    }
+
+    /* Update main container styles for bulk export */
+    .main-container.with-bulk-export {
+      width: 600px;
+    }
+
+    /* Remove modal backdrop since we're using a slide-out panel */
+    .modal-backdrop {
+      display: none !important;
+    }
+
+    /* ZIP download section styles */
+    .conv-zip-section {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      width: 100%;
+    }
+    .conv-zip-select {
+      flex: 1;
+      padding: 6px 4px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      font-size: 12px;
+    }
+    .conv-zip-btn {
+      flex: 2;
+      padding: 6px 4px;
+      font-size: 12px;
+    }
+    .download-all-zip-btn {
+      width: 100%;
+      margin-top: 6px;
+      justify-content: center;
+    }
+    .zip-status {
+      margin-top: 6px;
+      padding: 6px 8px;
+      background: #e6f3ff;
+      color: #0066cc;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="main-content">
+  <div class="header-section">
+    <h2>Fiverr Conversation Extractor</h2>
+    <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="modalBackdrop" class="modal-backdrop"></div>
+  <div id="settingsModal" class="settings-modal">
+    <h3 class="modal-title">Settings</h3>
+    <div class="settings-group">
+      <label for="dateFormat">Date Format:</label>
+      <select id="dateFormat">
+        <option value="DD/MM/YYYY">DD/MM/YYYY, HH:mm:ss AM</option>
+        <option value="MM/DD/YYYY">MM/DD/YYYY, HH:mm:ss AM</option>
+        <option value="YYYY/MM/DD">YYYY/MM/DD, HH:mm:ss AM</option>
+        <option value="DD-MM-YYYY">DD-MM-YYYY, HH:mm:ss AM</option>
+      </select>
+    </div>
+        <div class="settings-group">
+          <label for="attachmentSort">Attachment Sort Order:</label>
+          <select id="attachmentSort">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+      </select>
+    </div>
+    <div class="modal-buttons">
+      <button id="cancelBtn" class="modal-btn cancel-btn">Cancel</button>
+      <button id="saveBtn" class="modal-btn save-btn">Save</button>
+    </div>
+  </div>
+
+      <div id="status" class="status progress">Ready to extract data...</div>
+      
+      <!-- New Progress Bar Component -->
+      <div id="progressBarContainer" class="progress-container" style="display: none;">
+        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressLabel" class="progress-label">0%</div>
+      </div>
+      
+      <!-- New Notification Container -->
+      <div id="notificationContainer" class="notification-container"></div>
+
+  <div id="conversationActions" class="conversation-actions" style="display: none;">
+    <div id="currentConversation" class="current-conversation" style="display: none;"></div>
+    <button id="downloadBtn" class="action-button">📥 Download MD</button>
+    <button id="openBtn" class="action-button">📄 View MD</button>
+    <button id="downloadJsonBtn" class="action-button">📥 Download JSON</button>
+    <button id="viewJsonBtn" class="action-button">📄 View JSON</button>
+    <button id="downloadHtmlBtn" class="action-button">📥 Download HTML</button>
+    <button id="viewHtmlBtn" class="action-button">📄 View HTML</button>
+    <button id="viewAttachmentsBtn" class="action-button">📎 View Attachments (0)</button>
+    <div class="conv-zip-section">
+      <select id="convZipFormat" class="conv-zip-select">
+        <option value="markdown">Markdown</option>
+        <option value="json">JSON</option>
+        <option value="html">HTML</option>
+        <option value="all">All Formats</option>
+      </select>
+      <button id="downloadConvWithAttachBtn" class="action-button conv-zip-btn">📦 Download Conv + Attachments (ZIP)</button>
+    </div>
+    <div id="convZipStatus" class="zip-status" style="display: none;"></div>
+  </div>
+  <div class="main-actions">
+    <div class="button-container">
+      <button id="extractBtn" class="action-button">Extract Conversation</button>
+      <div id="extractionProgress" class="progress-text" style="display: none;"></div>
+    </div>
+    <div class="button-container">
+      <button id="fetchContactsBtn" class="action-button">👥 Fetch All Contacts</button>
+      <div id="contactsProgress" class="progress-text" style="display: none;"></div>
+    </div>
+    <div class="button-container">
+      <button id="toggleContacts" class="action-button">👥 View Contacts (<span id="contactsCountBadge">0</span>)</button>
+    </div>
+    <div class="button-container">
+      <button id="bulkExportBtn" class="action-button">📦 Bulk Export Conversations</button>
+      <div id="bulkExportProgress" class="progress-text" style="display: none;">
+        <div class="mini-progress-container">
+          <div id="mainPanelExportProgress" class="progress-bar"></div>
+        </div>
+        <span id="mainPanelExportStatus"></span>
+      </div>
+    </div>
+  </div>
+  <div id="progressCounter" class="progress-counter" style="display: none;">
+    Total Contacts: <span id="contactCount">0</span>
+  </div>
+      <div id="progressLog" class="progress-log"></div>
+    </div>
+
+    <!-- Contacts Panel -->
+    <div id="contactsPanel" class="side-panel">
+      <div class="panel-header">
+    <h3>Contacts</h3>
+        <span id="contactsCount" class="panel-count">0</span>
+      </div>
+    <div id="contactsList" class="contacts-list"></div>
+    </div>
+
+    <!-- Attachments Panel -->
+    <div id="attachmentsPanel" class="side-panel">
+      <div class="panel-header">
+        <h3>Attachments</h3>
+        <span id="attachmentsCount" class="panel-count">0</span>
+      </div>
+      <div class="attachment-actions">
+        <div class="attachment-select-all">
+          <input type="checkbox" id="selectAllAttachments" class="attachment-checkbox">
+          <label for="selectAllAttachments">Select All</label>
+        </div>
+        <button id="bulkDownloadBtn" class="bulk-download-btn" disabled>
+          <span>Download Selected</span>
+          <span id="selectedCount" class="attachment-count">0</span>
+        </button>
+      </div>
+      <button id="downloadAllZipBtn" class="bulk-download-btn download-all-zip-btn">📦 Download All as ZIP</button>
+      <div id="attachZipStatus" class="zip-status" style="display: none;"></div>
+      <div id="attachmentsList"></div>
+    </div>
+  </div>
+
+  <!-- Bulk Export Modal -->
+  <div id="bulkExportModal" class="bulk-export-modal">
+    <div class="bulk-export-content">
+      <div class="bulk-export-header">
+        <h2 class="bulk-export-title">Export Conversations</h2>
+        <button id="closeBulkExport" class="bulk-export-close">✖</button>
+      </div>
+      <div class="bulk-export-options">
+        <div class="export-option">
+          <label for="exportFormat">Export Format:</label>
+          <select id="exportFormat">
+            <option value="all">All Formats (MD, JSON, HTML)</option>
+            <option value="both">Both Markdown & JSON</option>
+            <option value="markdown">Markdown Only</option>
+            <option value="json">JSON Only</option>
+            <option value="html">HTML Only</option>
+          </select>
+        </div>
+        <div class="export-option">
+          <label for="includeAttachments">Include Attachments:</label>
+          <input type="checkbox" id="includeAttachments" checked>
+          <label for="includeAttachments"> Download attachments with conversations</label>
+        </div>
+      </div>
+      <div class="contacts-selection">
+        <div class="select-all-contacts">
+          <input type="checkbox" id="selectAllContactsExport">
+          <label for="selectAllContactsExport">Select All Contacts</label>
+        </div>
+        <div id="contactsSelection"></div>
+      </div>
+      <div class="export-actions">
+        <button id="exportButton" class="export-button">Start Export</button>
+      </div>
+      <div id="exportProgress" class="export-progress">
+        <div class="progress-container">
+          <div id="exportProgressBar" class="progress-bar"></div>
+          <div id="exportProgressLabel" class="progress-label">0%</div>
+        </div>
+        <div id="exportStatus" class="export-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="jszip.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

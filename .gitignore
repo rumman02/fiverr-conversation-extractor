@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build files
+*.zip
+*.crx
+*.pem
+
+# IDE files
+.idea/
+*.swp
+*.swo
+
+# VS Code files
+*.code-workspace
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Test files
+coverage/
+.nyc_output/
+
+# Conversation data files
+conversation*.json
+*conversation.json
+
+# External dependency (not committed — must be provided separately)
+jszip.min.js
+
+# Qwen Code internal
+.qwen/
