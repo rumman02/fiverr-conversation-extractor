@@ -1694,20 +1694,20 @@ async function processBulkExportResponse(response) {
 
 // Helper function to download a text file directly
 async function downloadTextFile(content, filename, mimeType) {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(content);
+  const base64 = arrayBufferToBase64(bytes.buffer);
+  const dataUrl = `data:${mimeType};base64,${base64}`;
 
   return new Promise((resolve, reject) => {
     chrome.downloads.download({
-      url: url,
+      url: dataUrl,
       filename: filename,
       conflictAction: 'uniquify'
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
-        URL.revokeObjectURL(url);
         reject(new Error(`Download error: ${chrome.runtime.lastError.message}`));
       } else {
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
         resolve(downloadId);
       }
     });
@@ -1745,20 +1745,21 @@ async function downloadAttachmentsDirectly(conversation, username, folderPrefix)
               // Create a safe path
               const safePath = `${folderPrefix}/attachments/${filename}`.replace(/[<>:"/\\|?*]/g, '_');
               
-              // Create an object URL and download
+              // Encode blob as base64 data URL and download
+              const arrayBuffer = await blob.arrayBuffer();
+              const base64 = arrayBufferToBase64(arrayBuffer);
+              const dataUrl = `data:${blob.type || 'application/octet-stream'};base64,${base64}`;
+
               return new Promise((resolve, reject) => {
-                const blobUrl = URL.createObjectURL(blob);
                 chrome.downloads.download({
-                  url: blobUrl,
+                  url: dataUrl,
                   filename: safePath,
                   conflictAction: 'uniquify'
                 }, (downloadId) => {
                   if (chrome.runtime.lastError) {
-                    URL.revokeObjectURL(blobUrl);
                     console.error(`Error downloading attachment: ${chrome.runtime.lastError.message}`);
                     reject(new Error(`Download error: ${chrome.runtime.lastError.message}`));
                   } else {
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
                     resolve(downloadId);
                   }
                 });
