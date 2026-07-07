@@ -474,6 +474,34 @@ function setupBulkActions(username) {
   });
 }
 
+// Track contacts selected via the contacts side panel
+let panelSelectedContacts = new Set();
+// Cached list of all contacts for search filtering
+let allPanelContacts = [];
+
+// Update the "Download Selected" count and button state in the contacts panel
+function updatePanelSelectedCount() {
+  const countEl = document.getElementById('panelSelectedCount');
+  const btn = document.getElementById('panelDownloadSelectedBtn');
+  if (countEl) countEl.textContent = panelSelectedContacts.size;
+  if (btn) btn.disabled = panelSelectedContacts.size === 0;
+
+  // Sync the "Select All" checkbox state
+  const selectAll = document.getElementById('selectAllPanelContacts');
+  const allCbs = document.querySelectorAll('.contact-panel-checkbox');
+  if (selectAll && allCbs.length > 0) {
+    if (panelSelectedContacts.size === allCbs.length) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else if (panelSelectedContacts.size === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else {
+      selectAll.indeterminate = true;
+    }
+  }
+}
+
 // Modified displayContacts function
 async function displayContacts(contacts) {
   const contactsList = document.getElementById('contactsList');
@@ -481,32 +509,91 @@ async function displayContacts(contacts) {
   const contactsCountBadge = document.getElementById('contactsCountBadge');
   if (!contactsList || !contactsCount) return;
 
-  contactsList.innerHTML = ''; // Clear existing contacts
-  
+  panelSelectedContacts.clear();
+  updatePanelSelectedCount();
+
   if (!contacts || contacts.length === 0) {
+    allPanelContacts = [];
     contactsList.innerHTML = '<div class="no-contacts">No contacts found</div>';
     contactsCount.textContent = '0';
     contactsCountBadge.textContent = '0';
     return;
   }
 
-  const count = contacts.length.toString();
-  contactsCount.textContent = count;
-  contactsCountBadge.textContent = count;
+  allPanelContacts = contacts;
+  contactsCount.textContent = contacts.length.toString();
+  contactsCountBadge.textContent = contacts.length.toString();
 
-  for (const contact of contacts) {
+  // Clear search input on fresh load
+  const searchInput = document.getElementById('contactSearchInput');
+  if (searchInput) searchInput.value = '';
+
+  // Initial render (no filter)
+  renderFilteredContacts('');
+}
+
+// Render only the contacts matching `filter` (case-insensitive substring on username)
+async function renderFilteredContacts(filter) {
+  const contactsList = document.getElementById('contactsList');
+  if (!contactsList) return;
+
+  contactsList.innerHTML = '';
+
+  const lowerFilter = filter.toLowerCase().trim();
+  const filtered = allPanelContacts.filter(c => {
+    const username = (c.username || '').toLowerCase();
+    return username.includes(lowerFilter);
+  });
+
+  // Show count as "filtered / total"
+  const contactsCount = document.getElementById('contactsCount');
+  if (contactsCount && lowerFilter) {
+    contactsCount.textContent = `${filtered.length}/${allPanelContacts.length}`;
+  } else if (contactsCount) {
+    contactsCount.textContent = allPanelContacts.length.toString();
+  }
+
+  if (filtered.length === 0) {
+    contactsList.innerHTML = '<div class="no-contacts">No contacts match your search</div>';
+    return;
+  }
+
+  for (const contact of filtered) {
     const contactDiv = document.createElement('div');
     contactDiv.className = 'contact-item';
-    
+
     const username = contact.username || 'Unknown User';
     const lastMessage = await formatDate(contact.recentMessageDate);
-    
-    contactDiv.innerHTML = `
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'contact-panel-checkbox';
+    checkbox.dataset.username = username;
+    checkbox.checked = panelSelectedContacts.has(username);
+    if (checkbox.checked) contactDiv.classList.add('selected');
+    checkbox.addEventListener('change', function() {
+      if (this.checked) {
+        panelSelectedContacts.add(username);
+        contactDiv.classList.add('selected');
+      } else {
+        panelSelectedContacts.delete(username);
+        contactDiv.classList.remove('selected');
+      }
+      updatePanelSelectedCount();
+    });
+
+    const body = document.createElement('div');
+    body.className = 'contact-item-body';
+    body.innerHTML = `
       <div class="contact-name">${username}</div>
       <div class="contact-last-message">Last message: ${lastMessage}</div>
     `;
-    
-    contactDiv.addEventListener('click', () => {
+
+    contactDiv.appendChild(checkbox);
+    contactDiv.appendChild(body);
+
+    // Clicking the contact body (not the checkbox) extracts a single conversation
+    body.addEventListener('click', () => {
       // Store username and trigger extraction
       chrome.storage.local.set({ currentUsername: username }, () => {
         // Only send message after storage is set
@@ -517,10 +604,10 @@ async function displayContacts(contacts) {
         document.querySelector('.main-container').classList.remove('expanded');
         // Update button text
         document.getElementById('toggleContacts').innerHTML =
-          viewContactsLabel(count);
+          viewContactsLabel(allPanelContacts.length.toString());
       });
     });
-    
+
     contactsList.appendChild(contactDiv);
   }
 }
@@ -1042,6 +1129,40 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleContactsBtn.addEventListener('click', toggleContactsPanel);
   }
 
+  // Contacts panel: search input
+  const contactSearchInput = document.getElementById('contactSearchInput');
+  if (contactSearchInput) {
+    contactSearchInput.addEventListener('input', function() {
+      renderFilteredContacts(this.value);
+    });
+  }
+
+  // Contacts panel: "Select All" checkbox
+  const selectAllPanelContacts = document.getElementById('selectAllPanelContacts');
+  if (selectAllPanelContacts) {
+    selectAllPanelContacts.addEventListener('change', function() {
+      const allCbs = document.querySelectorAll('.contact-panel-checkbox');
+      allCbs.forEach(cb => {
+        cb.checked = this.checked;
+        const itemDiv = cb.closest('.contact-item');
+        if (this.checked) {
+          panelSelectedContacts.add(cb.dataset.username);
+          if (itemDiv) itemDiv.classList.add('selected');
+        } else {
+          panelSelectedContacts.delete(cb.dataset.username);
+          if (itemDiv) itemDiv.classList.remove('selected');
+        }
+      });
+      updatePanelSelectedCount();
+    });
+  }
+
+  // Contacts panel: "Download Selected" button
+  const panelDownloadSelectedBtn = document.getElementById('panelDownloadSelectedBtn');
+  if (panelDownloadSelectedBtn) {
+    panelDownloadSelectedBtn.addEventListener('click', startBulkExportFromPanel);
+  }
+
   // Bulk export button
   const bulkExportBtn = document.getElementById('bulkExportBtn');
   if (bulkExportBtn) {
@@ -1472,6 +1593,78 @@ function setupSelectAllContactsExport() {
   });
 }
 
+// Start bulk export for contacts selected in the side panel, using the
+// checked format checkboxes (Markdown / JSON / HTML / Attachments).
+async function startBulkExportFromPanel() {
+  if (panelSelectedContacts.size === 0) {
+    showNotification('error', 'No Contacts Selected', 'Please select at least one contact to export.');
+    return;
+  }
+
+  // Check if an export is already running
+  try {
+    const statusResponse = await new Promise(resolve => {
+      chrome.runtime.sendMessage({ type: 'GET_BULK_EXPORT_STATUS' }, status => resolve(status));
+    });
+    if (statusResponse && statusResponse.status === 'running') {
+      showNotification('info', 'Export Running', 'A bulk export is already in progress. Please wait for it to finish.');
+      return;
+    }
+  } catch (err) {
+    console.error('Error checking export status:', err);
+  }
+
+  // Gather selected formats from the panel checkboxes
+  const allChecked = Array.from(document.querySelectorAll('.panel-format-cb:checked')).map(cb => cb.value);
+  const includeAttachments = allChecked.includes('attachments');
+  const formats = allChecked.filter(f => f !== 'attachments');
+  if (formats.length === 0 && !includeAttachments) {
+    showNotification('error', 'No Format Selected', 'Please select at least one format to download.');
+    return;
+  }
+
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const activeTab = tabs[0];
+    if (!activeTab || !activeTab.url || !activeTab.url.includes('fiverr.com')) {
+      throw new Error('Please open Fiverr in the active tab before starting the export.');
+    }
+
+    const btn = document.getElementById('panelDownloadSelectedBtn');
+    if (btn) btn.disabled = true;
+
+    const contactsToExport = Array.from(panelSelectedContacts).map(username => ({ username }));
+
+    chrome.runtime.sendMessage({
+      type: 'START_BULK_EXPORT',
+      contacts: contactsToExport,
+      format: formats,
+      includeAttachments: includeAttachments,
+      tabId: activeTab.id
+    }, response => {
+      if (chrome.runtime.lastError) {
+        console.error('Runtime error:', chrome.runtime.lastError);
+        showNotification('error', 'Export Failed', chrome.runtime.lastError.message);
+        if (btn) btn.disabled = false;
+        return;
+      }
+      if (response && response.success) {
+        showNotification('success', 'Export Started', `Exporting ${contactsToExport.length} conversation(s) in the background.`);
+        startExportStatusChecking();
+      } else {
+        const errorMsg = response?.message || 'Failed to start export. Please try again.';
+        showNotification('error', 'Export Failed', errorMsg);
+        if (btn) btn.disabled = false;
+      }
+    });
+  } catch (error) {
+    console.error('Error starting bulk export from panel:', error);
+    showNotification('error', 'Export Error', error.message);
+    const btn = document.getElementById('panelDownloadSelectedBtn');
+    if (btn) btn.disabled = false;
+  }
+}
+
 async function startBulkExport() {
   // Check if an export is already running
   let exportAlreadyRunning = false;
@@ -1713,10 +1906,16 @@ function updateMainPanelExportProgress(status) {
         bulkExportProgress.style.display = 'none';
       }
     }, 5000);
+    // Re-enable the contacts panel download button
+    const panelBtn = document.getElementById('panelDownloadSelectedBtn');
+    if (panelBtn) panelBtn.disabled = panelSelectedContacts.size === 0;
   } else if (status.status === 'error') {
     mainPanelExportStatus.textContent = 'Export error: ' + (status.message || 'Unknown error');
     // Reset the button color
     document.getElementById('bulkExportBtn').style.backgroundColor = '';
+    // Re-enable the contacts panel download button
+    const panelBtn = document.getElementById('panelDownloadSelectedBtn');
+    if (panelBtn) panelBtn.disabled = panelSelectedContacts.size === 0;
   }
 }
 

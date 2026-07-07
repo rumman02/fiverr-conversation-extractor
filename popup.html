@@ -650,6 +650,65 @@
       font-weight: 600;
     }
     .contacts-list { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
+
+    /* Contacts panel search */
+    .contact-search-input {
+      width: 100%;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      border: 1px solid var(--input);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      background: var(--card);
+      color: var(--foreground);
+    }
+    .contact-search-input:focus { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+    /* Contacts panel selection */
+    .contacts-select-all {
+      display: flex;
+      align-items: center;
+      padding: 6px 4px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+    }
+    .contacts-select-all input { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; margin: 0; }
+    .contacts-select-all label { margin-left: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .contact-panel-checkbox {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .contact-item-body { flex: 1; min-width: 0; }
+    .contact-item.selected { background: #eff6ff; border-color: var(--accent); }
+    .panel-export-footer {
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .panel-format-checkboxes {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 6px 8px;
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .panel-export-footer .action-button { font-size: 12px; padding: 7px 10px; }
+    .panel-export-footer .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .attachments-panel { display: none; }
     .attachments-panel.expanded { display: flex; }
     #attachmentsList { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
@@ -911,7 +970,21 @@
     <h3>Contacts</h3>
         <span id="contactsCount" class="panel-count">0</span>
       </div>
+      <input type="text" id="contactSearchInput" class="contact-search-input" placeholder="Search contacts...">
+      <div class="contacts-select-all">
+        <input type="checkbox" id="selectAllPanelContacts">
+        <label for="selectAllPanelContacts">Select All</label>
+      </div>
     <div id="contactsList" class="contacts-list"></div>
+      <div class="panel-export-footer">
+        <div class="panel-format-checkboxes">
+          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="markdown" checked> <span>Markdown</span></label>
+          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="json" checked> <span>JSON</span></label>
+          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="html" checked> <span>HTML</span></label>
+          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="attachments" checked> <span>Files</span></label>
+        </div>
+        <button id="panelDownloadSelectedBtn" class="action-button" disabled>Download Selected (<span id="panelSelectedCount">0</span>)</button>
+      </div>
     </div>
 
     <!-- Attachments Panel -->

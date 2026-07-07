@@ -1394,23 +1394,39 @@ async function processConversationData(username, data) {
       console.log(`Processing conversation data for ${username}`);
       
       const format = bulkExport.format;
-      
+
+      // Normalize the requested format(s) into an array of individual formats.
+      // Accepts either an array (from the panel checkboxes) or a legacy string
+      // value such as 'all', 'both', or a single format name.
+      let formats;
+      if (Array.isArray(format)) {
+        formats = format;
+      } else if (format === 'all') {
+        formats = ['markdown', 'json', 'html'];
+      } else if (format === 'both') {
+        formats = ['markdown', 'json'];
+      } else if (format) {
+        formats = [format];
+      } else {
+        formats = [];
+      }
+
       // Add the currentUsername to the data object to ensure correct titles
       const processedData = {
         ...data,
         currentUsername: username
       };
-      
+
       // Process the conversation data and download directly
       try {
         // Create folder structure
         const folderPrefix = `fiverr-conversations/${username}`;
-        
+
         // Track all download promises
         const downloadPromises = [];
-        
+
         // Process markdown if needed
-        if (format === 'all' || format === 'both' || format === 'markdown') {
+        if (formats.includes('markdown')) {
           // Convert to markdown
           const markdownContent = await convertToMarkdownBg(processedData);
           
@@ -1420,22 +1436,22 @@ async function processConversationData(username, data) {
         }
         
         // Process JSON if needed
-        if (format === 'all' || format === 'both' || format === 'json') {
+        if (formats.includes('json')) {
           // Download the JSON file
           const jsonFilename = `${folderPrefix}/${username}.json`;
           downloadPromises.push(downloadTextFile(JSON.stringify(processedData, null, 2), jsonFilename, 'application/json'));
         }
-        
+
         // Process HTML if needed
-        if (format === 'all' || format === 'html') {
+        if (formats.includes('html')) {
           // Convert to HTML
           const htmlContent = await convertToHtmlBg(processedData);
-          
+
           // Download the HTML file
           const htmlFilename = `${folderPrefix}/${username}.html`;
           downloadPromises.push(downloadTextFile(htmlContent, htmlFilename, 'text/html'));
         }
-        
+
         // Process attachments if needed
         if (bulkExport.includeAttachments && data.messages) {
           // For each message that has attachments
@@ -1550,43 +1566,57 @@ async function processBulkExportResponse(response) {
       console.log(`Received conversation data for ${response.username}`);
       
       const format = bulkExport.format;
-      
+
+      // Normalize the requested format(s) into an array of individual formats.
+      let formats;
+      if (Array.isArray(format)) {
+        formats = format;
+      } else if (format === 'all') {
+        formats = ['markdown', 'json', 'html'];
+      } else if (format === 'both') {
+        formats = ['markdown', 'json'];
+      } else if (format) {
+        formats = [format];
+      } else {
+        formats = [];
+      }
+
       // Add the currentUsername to the data object to ensure correct titles
       const processedData = {
         ...response.data,
         currentUsername: response.username
       };
-      
+
       // Process the conversation data and download directly
       try {
         // Create folder structure
         const folderPrefix = `fiverr-conversations/${response.username}`;
-        
+
         // Track all download promises
         const downloadPromises = [];
-        
+
         // Process markdown if needed
-        if (format === 'both' || format === 'markdown') {
+        if (formats.includes('markdown')) {
           // Convert to markdown
           const markdownContent = await convertToMarkdownBg(processedData);
-          
+
           // Download the markdown file
           const mdFilename = `${folderPrefix}/${response.username}.md`;
           downloadPromises.push(downloadTextFile(markdownContent, mdFilename, 'text/markdown'));
         }
-        
+
         // Process JSON if needed
-        if (format === 'both' || format === 'json') {
+        if (formats.includes('json')) {
           // Download the JSON file
           const jsonFilename = `${folderPrefix}/${response.username}.json`;
           downloadPromises.push(downloadTextFile(JSON.stringify(response.data, null, 2), jsonFilename, 'application/json'));
         }
-        
+
         // Process HTML if needed
-        if (format === 'html') {
+        if (formats.includes('html')) {
           // Convert to HTML
           const htmlContent = await convertToHtmlBg(processedData);
-          
+
           // Download the HTML file
           const htmlFilename = `${folderPrefix}/${response.username}.html`;
           downloadPromises.push(downloadTextFile(htmlContent, htmlFilename, 'text/html'));
