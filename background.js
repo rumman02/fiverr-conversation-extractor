@@ -1694,37 +1694,23 @@ async function processBulkExportResponse(response) {
 
 // Helper function to download a text file directly
 async function downloadTextFile(content, filename, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+
   return new Promise((resolve, reject) => {
-    try {
-      // Create a blob from the content
-      const blob = new Blob([content], { type: mimeType });
-      
-      // Create a data URL
-      const reader = new FileReader();
-      reader.onload = function() {
-        // Download the file
-        chrome.downloads.download({
-          url: reader.result,
-          filename: filename,
-          conflictAction: 'uniquify'
-        }, (downloadId) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(`Download error: ${chrome.runtime.lastError.message}`));
-          } else {
-            resolve(downloadId);
-          }
-        });
-      };
-      
-      reader.onerror = function() {
-        reject(new Error('Error reading blob as data URL'));
-      };
-      
-      // Start reading the blob as a data URL
-      reader.readAsDataURL(blob);
-    } catch (error) {
-      reject(error);
-    }
+    chrome.downloads.download({
+      url: url,
+      filename: filename,
+      conflictAction: 'uniquify'
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        URL.revokeObjectURL(url);
+        reject(new Error(`Download error: ${chrome.runtime.lastError.message}`));
+      } else {
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        resolve(downloadId);
+      }
+    });
   });
 }
 
@@ -1759,29 +1745,23 @@ async function downloadAttachmentsDirectly(conversation, username, folderPrefix)
               // Create a safe path
               const safePath = `${folderPrefix}/attachments/${filename}`.replace(/[<>:"/\\|?*]/g, '_');
               
-              // Create a data URL and download
+              // Create an object URL and download
               return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = function() {
-                  chrome.downloads.download({
-                    url: reader.result,
-                    filename: safePath,
-                    conflictAction: 'uniquify'
-                  }, (downloadId) => {
-                    if (chrome.runtime.lastError) {
-                      console.error(`Error downloading attachment: ${chrome.runtime.lastError.message}`);
-                      reject(new Error(`Download error: ${chrome.runtime.lastError.message}`));
-                    } else {
-                      resolve(downloadId);
-                    }
-                  });
-                };
-                
-                reader.onerror = function() {
-                  reject(new Error('Error reading blob as data URL'));
-                };
-                
-                reader.readAsDataURL(blob);
+                const blobUrl = URL.createObjectURL(blob);
+                chrome.downloads.download({
+                  url: blobUrl,
+                  filename: safePath,
+                  conflictAction: 'uniquify'
+                }, (downloadId) => {
+                  if (chrome.runtime.lastError) {
+                    URL.revokeObjectURL(blobUrl);
+                    console.error(`Error downloading attachment: ${chrome.runtime.lastError.message}`);
+                    reject(new Error(`Download error: ${chrome.runtime.lastError.message}`));
+                  } else {
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                    resolve(downloadId);
+                  }
+                });
               });
             })
             .catch(error => {
