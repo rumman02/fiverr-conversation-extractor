@@ -628,8 +628,10 @@
       flex-direction: column;
       padding: 0;
       box-sizing: border-box;
+      margin-top: 10px;
+      height: 500px;
     }
-    .side-panel.expanded { width: 300px; padding: 12px 8px 12px 16px; }
+    .side-panel.expanded { width: 300px; padding: 8px 8px 8px 16px; }
     .panel-header {
       display: flex;
       justify-content: space-between;
@@ -647,7 +649,7 @@
       color: var(--accent);
       font-weight: 600;
     }
-    .contacts-list { flex: 1; overflow-y: auto; padding-right: 4px; min-height: 0; }
+    .contacts-list { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
 
     /* Contacts panel search */
     .contact-search-input {
@@ -712,7 +714,7 @@
 
     .attachments-panel { display: none; }
     .attachments-panel.expanded { display: flex; }
-    #attachmentsList { flex: 1; overflow-y: auto; padding-right: 4px; min-height: 0; }
+    #attachmentsList { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
 
     .modal-backdrop { display: none !important; }
 
