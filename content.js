@@ -78,7 +78,7 @@ async function convertToMarkdown(data) {
     // Add custom offer details if this is a custom_package message with fetched data
     if (message.type === 'custom_package' && message.customPackageData && message.customPackageData.customPackage) {
       const cp = message.customPackageData.customPackage;
-      markdown += `\n**📦 Custom Offer: ${cp.title || ''}**\n\n`;
+      markdown += `\n**Custom Offer: ${cp.title || ''}**\n\n`;
 
       markdown += `- **Price:** US$${cp.totalPrice || 0}\n`;
       markdown += `- **Delivery:** ${cp.delivery || 0} Days\n`;

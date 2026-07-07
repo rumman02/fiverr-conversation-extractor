@@ -31,6 +31,21 @@ async function formatDate(timestamp) {
   });
 }
 
+// Inline SVG icons (Lucide-style line icons) used in dynamic button labels
+const ICONS = {
+  users: '<svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  paperclip: '<svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+  calendar: '<svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'
+};
+
+function viewContactsLabel(count, hide) {
+  return `${ICONS.users}${hide ? 'Hide' : 'View'} Contacts (<span id="contactsCountBadge">${count}</span>)`;
+}
+
+function viewAttachmentsLabel(count, hide) {
+  return `${ICONS.paperclip}${hide ? 'Hide' : 'View'} Attachments (${count})`;
+}
+
 /**
  * Progress Bar Management
  */
@@ -212,12 +227,12 @@ function closeAllPanels() {
   const attachmentsBtn = document.getElementById('viewAttachmentsBtn');
   
   if (contactsBtn) {
-    contactsBtn.innerHTML = `👥 View Contacts (<span id="contactsCountBadge">${document.getElementById('contactsCount')?.textContent || '0'}</span>)`;
+    contactsBtn.innerHTML = viewContactsLabel(document.getElementById('contactsCount')?.textContent || '0');
   }
-  
+
   if (attachmentsBtn) {
     const count = document.getElementById('attachmentsCount')?.textContent || '0';
-    attachmentsBtn.textContent = `📎 View Attachments (${count})`;
+    attachmentsBtn.innerHTML = viewAttachmentsLabel(count);
   }
 }
 
@@ -233,17 +248,17 @@ function toggleContactsPanel() {
   if (isCurrentlyExpanded) {
     panel.classList.remove('expanded');
     container.classList.remove('expanded');
-    toggleBtn.innerHTML = `👥 View Contacts (<span id="contactsCountBadge">${document.getElementById('contactsCount').textContent}</span>)`;
+    toggleBtn.innerHTML = viewContactsLabel(document.getElementById('contactsCount').textContent);
     return;
   }
-  
+
   // Otherwise, close all panels first, then open this one
   closeAllPanels();
-  
+
   // Now expand this panel
   panel.classList.add('expanded');
   container.classList.add('expanded');
-  toggleBtn.innerHTML = `👥 Hide Contacts (<span id="contactsCountBadge">${document.getElementById('contactsCount').textContent}</span>)`;
+  toggleBtn.innerHTML = viewContactsLabel(document.getElementById('contactsCount').textContent, true);
 }
 
 function toggleAttachmentsPanel() {
@@ -259,18 +274,18 @@ function toggleAttachmentsPanel() {
     panel.classList.remove('expanded');
     container.classList.remove('expanded');
     const count = document.getElementById('attachmentsCount').textContent;
-    toggleBtn.textContent = `📎 View Attachments (${count})`;
+    toggleBtn.innerHTML = viewAttachmentsLabel(count);
     return;
   }
-  
+
   // Otherwise, close all panels first, then open this one
   closeAllPanels();
-  
+
   // Now expand this panel
   panel.classList.add('expanded');
   container.classList.add('expanded');
   const count = document.getElementById('attachmentsCount').textContent;
-  toggleBtn.textContent = `📎 Hide Attachments (${count})`;
+  toggleBtn.innerHTML = viewAttachmentsLabel(count, true);
 }
 
 // Modified displayAttachments function
@@ -304,8 +319,8 @@ async function displayAttachments(messages) {
     
     // Update attachments count
     attachmentsCount.textContent = allAttachments.length.toString();
-    document.getElementById('viewAttachmentsBtn').textContent = 
-      `📎 View Attachments (${allAttachments.length})`;
+    document.getElementById('viewAttachmentsBtn').innerHTML =
+      viewAttachmentsLabel(allAttachments.length);
     
     // Sort the attachments based on user preference
     if (sortOrder === 'newest') {
@@ -370,7 +385,7 @@ async function displayAttachments(messages) {
           
           info.innerHTML = `
             <div class="attachment-name">${attachment.filename} (${formatFileSize(attachment.fileSize)})</div>
-            <div class="attachment-time">📅 ${timestamp}</div>
+            <div class="attachment-time">${ICONS.calendar}${timestamp}</div>
           `;
           
           const downloadBtn = document.createElement('button');
@@ -501,8 +516,8 @@ async function displayContacts(contacts) {
         document.getElementById('contactsPanel').classList.remove('expanded');
         document.querySelector('.main-container').classList.remove('expanded');
         // Update button text
-        document.getElementById('toggleContacts').innerHTML = 
-          `👥 View Contacts (<span id="contactsCountBadge">${count}</span>)`;
+        document.getElementById('toggleContacts').innerHTML =
+          viewContactsLabel(count);
       });
     });
     
@@ -598,8 +613,8 @@ function handleConversationExtracted(data, message) {
   const attachmentsCount = document.getElementById('attachmentsCount');
   
   if (viewAttachmentsBtn) {
-    viewAttachmentsBtn.textContent = `📎 View Attachments (${attachmentCount})`;
-    viewAttachmentsBtn.style.display = attachmentCount > 0 ? 'block' : 'none';
+    viewAttachmentsBtn.innerHTML = viewAttachmentsLabel(attachmentCount);
+    viewAttachmentsBtn.style.display = attachmentCount > 0 ? 'flex' : 'none';
   }
   
   if (attachmentsCount) {
@@ -1107,7 +1122,11 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        const format = document.getElementById('convZipFormat').value;
+        const formats = Array.from(document.querySelectorAll('.conv-zip-format-cb:checked')).map(cb => cb.value);
+        if (formats.length === 0) {
+          showNotification('error', 'No Format Selected', 'Please select at least one format to include in the ZIP.');
+          return;
+        }
         const username = result.currentUsername || 'conversation';
 
         const statusEl = document.getElementById('convZipStatus');
@@ -1120,7 +1139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.runtime.sendMessage({
           type: 'DOWNLOAD_CONVERSATION_WITH_ATTACHMENTS_ZIP',
           username: username,
-          format: format
+          format: formats
         }, function(response) {
           if (chrome.runtime.lastError) {
             console.error('Error sending ZIP request:', chrome.runtime.lastError);

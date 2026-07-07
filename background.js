@@ -139,7 +139,7 @@ async function convertToMarkdownBg(data) {
     // Add custom offer details if this is a custom_package message with fetched data
     if (message.type === 'custom_package' && message.customPackageData && message.customPackageData.customPackage) {
       const cp = message.customPackageData.customPackage;
-      markdown += `\n**📦 Custom Offer: ${cp.title || ''}**\n\n`;
+      markdown += `\n**Custom Offer: ${cp.title || ''}**\n\n`;
 
       markdown += `- **Price:** US$${cp.totalPrice || 0}\n`;
       markdown += `- **Delivery:** ${cp.delivery || 0} Days\n`;
@@ -523,7 +523,7 @@ async function convertToHtmlBg(data) {
           const attachmentTime = attachment.created_at ? ` (uploaded on ${await formatDate(attachment.created_at)})` : '';
           html += `
         <div class="attachment">
-          <span class="attachment-icon">📎</span>
+          <span class="attachment-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></span>
           ${fileName} (${fileSize})${attachmentTime}
         </div>`;
         }
@@ -2179,8 +2179,24 @@ async function downloadConversationWithAttachmentsZip(username, format) {
     const processedData = { ...data, currentUsername: username };
     const zip = new JSZip();
 
+    // Normalize the requested format(s) into an array of individual formats.
+    // Accepts either an array (from the popup checkboxes) or a legacy string
+    // value such as 'all', 'both', or a single format name.
+    let formats;
+    if (Array.isArray(format)) {
+      formats = format;
+    } else if (format === 'all') {
+      formats = ['markdown', 'json', 'html'];
+    } else if (format === 'both') {
+      formats = ['markdown', 'json'];
+    } else if (format) {
+      formats = [format];
+    } else {
+      formats = [];
+    }
+
     // Add format file(s) to the ZIP based on user's choice
-    if (format === 'markdown' || format === 'all') {
+    if (formats.includes('markdown')) {
       chrome.runtime.sendMessage({
         type: 'CONV_ZIP_PROGRESS',
         current: 0,
@@ -2191,11 +2207,11 @@ async function downloadConversationWithAttachmentsZip(username, format) {
       zip.file(`${username}.md`, markdown);
     }
 
-    if (format === 'json' || format === 'all') {
+    if (formats.includes('json')) {
       zip.file(`${username}.json`, JSON.stringify(processedData, null, 2));
     }
 
-    if (format === 'html' || format === 'all') {
+    if (formats.includes('html')) {
       chrome.runtime.sendMessage({
         type: 'CONV_ZIP_PROGRESS',
         current: 0,

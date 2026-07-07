@@ -1,65 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <title>Fiverr Conversation Extractor</title>
   <meta charset="UTF-8">
   <style>
+    :root {
+      --background: #f8fafc;
+      --card: #ffffff;
+      --foreground: #0f172a;
+      --muted: #f1f5f9;
+      --muted-foreground: #64748b;
+      --border: #e2e8f0;
+      --input: #e2e8f0;
+      --ring: #1dbf73;
+      --primary: #1dbf73;
+      --primary-hover: #16a34a;
+      --primary-foreground: #ffffff;
+      --accent: #1976d2;
+      --accent-hover: #1565c0;
+      --accent-foreground: #ffffff;
+      --danger: #ef4444;
+      --danger-foreground: #ffffff;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.06);
+      --shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.10), 0 1px 2px -1px rgba(15, 23, 42, 0.10);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.10), 0 2px 4px -2px rgba(15, 23, 42, 0.10);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.10), 0 4px 6px -4px rgba(15, 23, 42, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       width: auto;
-      min-width: 300px;
-      padding: 8px;
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
+      min-width: 380px;
+      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
       position: relative;
       overflow-x: hidden;
       min-height: 520px;
+      background: var(--background);
+      color: var(--foreground);
+      margin: 0;
     }
+
     h2 {
-      font-size: 1.4em;
-      margin-bottom: 8px;
-      text-align: center;
+      font-size: 1.15em;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.01em;
     }
+
+    .header-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 2px 2px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
     .status {
-      margin: 10px 0;
-      padding: 8px;
-      border-radius: 4px;
+      margin: 0 0 10px 0;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
       text-align: center;
+      font-size: 13px;
+      border: 1px solid transparent;
     }
-    .success {
-      background-color: #e8f5e9;
-      color: #2e7d32;
+    .status.success {
+      background-color: #ecfdf5;
+      color: #15803d;
+      border-color: #bbf7d0;
     }
-    .error {
-      background-color: #ffe6e6;
-      color: #ff0000;
+    .status.error {
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
     }
-    .progress {
-      background-color: #e6f3ff;
-      color: #0066cc;
+    .status.progress {
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
     }
-    
-    /* Progress Bar Styles */
+
+    /* Progress Bar */
     .progress-container {
       width: 100%;
-      margin: 15px 0;
-      background-color: #f5f5f5;
-      border-radius: 10px;
+      margin: 8px 0 12px;
+      background-color: var(--muted);
+      border-radius: 999px;
       position: relative;
-      height: 20px;
+      height: 18px;
       overflow: hidden;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
     }
     .progress-bar {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #1dbf73, #28e086);
-      border-radius: 10px;
+      background: linear-gradient(90deg, var(--primary), #22c55e);
+      border-radius: 999px;
       transition: width 0.3s ease;
-      position: relative;
     }
     .progress-bar.indeterminate {
       width: 50%;
-      background: linear-gradient(90deg, #1dbf73, #28e086);
+      background: linear-gradient(90deg, var(--primary), #22c55e);
       animation: indeterminate-progress 1.5s infinite linear;
       background-size: 200% 100%;
     }
@@ -71,77 +117,58 @@
       height: 100%;
       color: #fff;
       text-align: center;
-      line-height: 20px;
-      font-size: 12px;
-      text-shadow: 0 0 2px rgba(0,0,0,0.5);
-      font-weight: bold;
+      line-height: 18px;
+      font-size: 11px;
+      font-weight: 600;
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
       z-index: 1;
     }
     @keyframes indeterminate-progress {
       0% { background-position: 0% 0; }
       100% { background-position: 200% 0; }
     }
-    
-    /* Notification System */
+
+    /* Notifications */
     .notification-container {
       position: fixed;
-      top: 20px;
-      right: 20px;
+      top: 16px;
+      right: 16px;
       z-index: 9999;
       width: 280px;
     }
     .notification {
       margin-bottom: 10px;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.23);
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-md);
       display: flex;
       justify-content: space-between;
       align-items: center;
       animation: slide-in 0.3s ease forwards;
       position: relative;
       overflow: hidden;
+      color: #fff;
     }
-    .notification.success {
-      background-color: #1dbf73;
-      color: white;
-      border-left: 5px solid #169e60;
-    }
-    .notification.error {
-      background-color: #e74c3c;
-      color: white;
-      border-left: 5px solid #c0392b;
-    }
-    .notification.info {
-      background-color: #3498db;
-      color: white;
-      border-left: 5px solid #2980b9;
-    }
-    .notification-content {
-      flex: 1;
-    }
-    .notification-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-    .notification-message {
-      font-size: 13px;
-    }
+    .notification.success { background-color: var(--primary); }
+    .notification.error { background-color: var(--danger); }
+    .notification.info { background-color: var(--accent); }
+    .notification-content { flex: 1; }
+    .notification-title { font-weight: 700; margin-bottom: 3px; font-size: 13px; }
+    .notification-message { font-size: 12px; opacity: 0.95; }
     .notification-close {
       margin-left: 10px;
-      color: rgba(255,255,255,0.8);
+      color: rgba(255, 255, 255, 0.85);
       cursor: pointer;
       font-size: 16px;
+      line-height: 1;
     }
-    .notification-close:hover {
-      color: white;
-    }
+    .notification-close:hover { color: #fff; }
     .notification-progress {
       position: absolute;
       bottom: 0;
       left: 0;
       height: 3px;
-      background-color: rgba(255,255,255,0.4);
+      background-color: rgba(255, 255, 255, 0.4);
       width: 100%;
       transform-origin: left;
       animation: notification-timeout 5s linear forwards;
@@ -154,58 +181,124 @@
       from { transform: scaleX(1); }
       to { transform: scaleX(0); }
     }
-    
+
+    /* Buttons */
     .action-button {
-      margin: 4px 0;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      background-color: #4CAF50;
-      color: white;
-      transition: background-color 0.3s ease;
-      display: block;
+      background-color: var(--primary);
+      color: var(--primary-foreground);
+      transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
       width: 100%;
-      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
     }
-    .action-button:hover {
-      background-color: #45a049;
+    .btn-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .calendar-icon { width: 12px; height: 12px; flex-shrink: 0; vertical-align: middle; margin-right: 4px; color: var(--muted-foreground); }
+    .action-button:hover { background-color: var(--primary-hover); }
+    .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-button.btn-outline {
+      background-color: transparent;
+      color: var(--foreground);
+      border-color: var(--border);
+      box-shadow: var(--shadow-sm);
     }
+    .action-button.btn-outline:hover {
+      background-color: var(--muted);
+      border-color: #cbd5e1;
+    }
+    .action-button.btn-accent {
+      background-color: var(--accent);
+      color: var(--accent-foreground);
+    }
+    .action-button.btn-accent:hover { background-color: var(--accent-hover); }
+
+    /* Button row: pairs of buttons side by side */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      margin: 4px 0;
+    }
+    .btn-row .action-button {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+    }
+
     .conversation-actions {
       margin: 10px 0;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background-color: var(--card);
+      box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
+      gap: 4px;
     }
+
+    .current-conversation {
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      color: var(--accent);
+      background: #eff6ff;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+
     .progress-counter {
       text-align: center;
-      font-weight: bold;
-      margin: 5px 0;
-      color: #1565c0;
+      font-weight: 600;
+      margin: 6px 0;
+      color: var(--accent);
       font-size: 12px;
     }
     .progress-log {
       margin-top: 8px;
       padding: 8px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
+      background-color: var(--muted);
+      border-radius: var(--radius-sm);
       max-height: 60px;
       overflow-y: auto;
-      font-family: monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
       display: none;
     }
+
+    /* Main actions block */
+    .main-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .button-container { width: 100%; }
+
+    /* Contacts section / panel */
     .contacts-section {
       margin-top: 10px;
       padding: 12px;
-      background: #f5f5f5;
-      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       max-height: 300px;
       overflow-y: auto;
+    }
+    .contacts-section h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 13px;
     }
     .contacts-list {
       max-height: 250px;
@@ -213,39 +306,42 @@
       margin-top: 5px;
     }
     .contact-item {
-      padding: 6px 8px;
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      margin-bottom: 4px;
+      padding: 8px 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
     }
     .contact-item:hover {
-      background: #e3f2fd;
-      border-color: #1976d2;
-      transform: translateX(-2px);
+      background: #eff6ff;
+      border-color: var(--accent);
     }
     .contact-name {
-      font-weight: 500;
-      color: #1976d2;
+      font-weight: 600;
+      color: var(--accent);
       font-size: 13px;
     }
     .contact-last-message {
       font-size: 11px;
-      color: #666;
+      color: var(--muted-foreground);
       margin-top: 2px;
     }
     .no-contacts {
       text-align: center;
-      color: #666;
+      color: var(--muted-foreground);
       padding: 16px;
+      font-size: 13px;
     }
+
+    /* Attachments */
     .attachments-section {
       margin-top: 10px;
       padding: 10px;
-      background: #f5f5f5;
-      border-radius: 4px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       max-height: 200px;
       overflow-y: auto;
       width: 100%;
@@ -255,17 +351,19 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      background: white;
+      background: var(--card);
       padding: 8px;
       margin-bottom: 8px;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-sm);
       gap: 8px;
       min-width: 0;
     }
     .attachment-item.selected {
-      background-color: #e3f2fd;
-      border-left: 3px solid #1976d2;
+      background-color: #eff6ff;
+      border-color: var(--accent);
+      border-left: 3px solid var(--accent);
     }
     .attachment-wrapper {
       display: flex;
@@ -282,147 +380,115 @@
       font-size: 13px;
       line-height: 1.4;
     }
-    .attachment-name {
-      font-weight: 500;
-      margin-bottom: 2px;
-    }
-    .attachment-time {
-      font-size: 11px;
-      color: #666;
-    }
+    .attachment-name { font-weight: 600; margin-bottom: 2px; }
+    .attachment-time { font-size: 11px; color: var(--muted-foreground); }
     .download-btn {
-      background: #1976d2;
-      color: white;
+      background: var(--accent);
+      color: #fff;
       border: none;
-      padding: 4px 8px;
-      border-radius: 4px;
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 12px;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .download-btn:hover {
-      background: #1565c0;
-    }
+    .download-btn:hover { background: var(--accent-hover); }
     .attachment-list {
       margin: 10px 0;
       padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background-color: #f9f9f9;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background-color: var(--card);
     }
-    .attachment-item a {
-      color: #0066cc;
-      text-decoration: none;
-    }
-    .attachment-item a:hover {
-      text-decoration: underline;
-    }
+    .attachment-item a { color: var(--accent); text-decoration: none; }
+    .attachment-item a:hover { text-decoration: underline; }
     .attachment-button {
       width: 100%;
       margin: 5px 0;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
+      padding: 6px 10px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      background-color: #2196F3;
-      color: white;
+      background-color: var(--accent);
+      color: #fff;
       text-align: left;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      font-size: 13px;
     }
-    .attachment-button:hover {
-      background-color: #1976D2;
-    }
-    .loading {
-      text-align: center;
-      padding: 10px;
-      color: #666;
-    }
+    .attachment-button:hover { background-color: var(--accent-hover); }
+    .loading { text-align: center; padding: 10px; color: var(--muted-foreground); }
     .log-entry {
       margin: 5px 0;
-      padding: 2px 5px;
-      border-left: 3px solid #1dbf73;
+      padding: 2px 6px;
+      border-left: 3px solid var(--primary);
+      font-size: 12px;
     }
-    .log-entry.error {
-      border-left-color: #c62828;
-    }
+    .log-entry.error { border-left-color: var(--danger); }
     .progress-text {
-      margin-top: 8px;
-      color: #666;
-      font-size: 14px;
+      margin-top: 6px;
+      color: var(--muted-foreground);
+      font-size: 13px;
       text-align: center;
     }
     .mini-progress-container {
       height: 6px;
-      background-color: #f5f5f5;
-      border-radius: 3px;
-      margin: 5px 0;
+      background-color: var(--muted);
+      border-radius: 999px;
+      margin: 6px 0;
       overflow: hidden;
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
     }
-    .current-conversation {
-      text-align: center;
-      font-weight: bold;
-      margin-bottom: 10px;
-      padding: 8px;
-      color: #1565c0;
-      border-bottom: 2px solid #e0e0e0;
-    }
-    /* Responsive adjustments */
+
     @media (max-width: 400px) {
       .attachment-item {
         flex-direction: column;
         align-items: stretch;
       }
-      
       .download-btn {
         margin-top: 6px;
         width: 100%;
         padding: 6px;
       }
-      
-      .attachment-info {
-        margin-right: 0;
-      }
-    }
-    .header-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      padding: 0 5px;
+      .attachment-info { margin-right: 0; }
     }
 
+    /* Settings */
     .settings-btn {
       background: none;
       border: none;
       cursor: pointer;
-      font-size: 20px;
-      padding: 5px;
-      transition: transform 0.2s;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      transition: transform 0.2s, background-color 0.2s;
+      line-height: 0;
+      color: var(--muted-foreground);
+      display: flex;
+      align-items: center;
     }
-
+    .settings-btn svg { width: 18px; height: 18px; }
     .settings-btn:hover {
       transform: rotate(45deg);
+      background-color: var(--muted);
+      color: var(--foreground);
     }
-
     .settings-modal {
       display: none;
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: white;
+      background: var(--card);
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
       z-index: 1000;
       width: 80%;
       max-width: 300px;
+      border: 1px solid var(--border);
     }
-
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -430,152 +496,121 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(15, 23, 42, 0.45);
       z-index: 999;
     }
-
-    .settings-group {
-      margin-bottom: 15px;
-    }
-
+    .settings-group { margin-bottom: 14px; }
     .settings-group label {
       display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-      color: #333;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: var(--foreground);
+      font-size: 13px;
     }
-
     .settings-group select {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
+      padding: 8px 10px;
+      border: 1px solid var(--input);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      font-size: 13px;
+      color: var(--foreground);
     }
-
+    .settings-group select:focus { outline: 2px solid var(--ring); outline-offset: 1px; }
     .modal-title {
-      margin: 0 0 15px 0;
-      color: #1565c0;
-      font-size: 1.2em;
+      margin: 0 0 14px 0;
+      color: var(--foreground);
+      font-size: 1.05em;
+      font-weight: 700;
       text-align: center;
     }
-
     .modal-buttons {
       display: flex;
       justify-content: flex-end;
-      gap: 10px;
-      margin-top: 15px;
+      gap: 8px;
+      margin-top: 14px;
     }
-
     .modal-btn {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 4px;
+      padding: 7px 14px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 500;
     }
-
-    .save-btn {
-      background: #4CAF50;
-      color: white;
-    }
-
-    .cancel-btn {
-      background: #f5f5f5;
-      color: #333;
-    }
-
-    .contacts-section h3 {
-      margin-top: 0;
-      margin-bottom: 5px;
-      font-size: 14px;
-    }
+    .save-btn { background: var(--primary); color: #fff; }
+    .save-btn:hover { background: var(--primary-hover); }
+    .cancel-btn { background: var(--muted); color: var(--foreground); border-color: var(--border); }
+    .cancel-btn:hover { background: #e2e8f0; }
 
     .attachment-checkbox {
       margin-right: 10px;
       width: 16px;
       height: 16px;
-      accent-color: #1976d2;
+      accent-color: var(--accent);
       cursor: pointer;
       flex-shrink: 0;
     }
-    
     .attachment-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 10px;
       padding: 8px;
-      background-color: #f0f0f0;
-      border-radius: 4px;
+      background-color: var(--muted);
+      border-radius: var(--radius-sm);
     }
-    
     .attachment-select-all {
       display: flex;
       align-items: center;
       font-size: 13px;
-      color: #333;
+      color: var(--foreground);
     }
-    
     .bulk-download-btn {
-      background: #1976d2;
-      color: white;
+      background: var(--accent);
+      color: #fff;
       border: none;
       padding: 6px 12px;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 13px;
       display: flex;
       align-items: center;
-      gap: 5px;
-      transition: background-color 0.2s;
+      gap: 6px;
+      transition: background-color 0.15s;
     }
-    
-    .bulk-download-btn:hover {
-      background-color: #1565c0;
-    }
-    
-    .bulk-download-btn:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    
+    .bulk-download-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .bulk-download-btn:hover { background-color: var(--accent-hover); }
+    .bulk-download-btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
     .attachment-count {
       margin-left: 5px;
       font-size: 12px;
-      font-weight: normal;
-      color: #666;
-      background: #e3f2fd;
-      padding: 2px 6px;
-      border-radius: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      background: #dbeafe;
+      padding: 1px 7px;
+      border-radius: 999px;
     }
 
-    /* Update main container styles */
+    /* Main container layout */
     .main-container {
       display: flex;
       position: relative;
       transition: width 0.3s ease;
-      width: 300px;
+      width: 360px;
       min-height: 500px;
     }
-
-    .main-container.expanded {
-      width: 600px;
-    }
-
+    .main-container.expanded { width: 660px; }
     .main-content {
-      width: 300px;
+      width: 360px;
       flex-shrink: 0;
-      padding-right: 8px;
       min-height: 500px;
     }
-
-    /* Shared panel styles for both contacts and attachments */
     .side-panel {
       width: 0;
       overflow: hidden;
-      background: white;
-      border-left: 1px solid #ddd;
+      background: var(--card);
+      border-left: 1px solid var(--border);
       transition: width 0.3s ease;
       flex-shrink: 0;
       display: flex;
@@ -585,61 +620,30 @@
       margin-top: 10px;
       height: 500px;
     }
-
-    .side-panel.expanded {
-      width: 300px;
-      padding: 8px 8px 8px 16px;
-    }
-
-    /* Panel header styles */
+    .side-panel.expanded { width: 300px; padding: 8px 8px 8px 16px; }
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 8px 0;
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 8px;
     }
-
-    .panel-header h3 {
-      margin: 0;
-      font-size: 14px;
-      color: #1976d2;
-    }
-
+    .panel-header h3 { margin: 0; font-size: 13px; color: var(--accent); font-weight: 700; }
     .panel-count {
-      background: #e3f2fd;
+      background: #dbeafe;
       padding: 2px 8px;
-      border-radius: 12px;
+      border-radius: 999px;
       font-size: 12px;
-      color: #1976d2;
+      color: var(--accent);
+      font-weight: 600;
     }
-    
-    /* Contacts list styles */
-    .contacts-list {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 4px;
-      max-height: 450px;
-    }
+    .contacts-list { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
+    .attachments-panel { display: none; }
+    .attachments-panel.expanded { display: flex; }
+    #attachmentsList { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
 
-    /* Move attachments section to be a side panel */
-    .attachments-panel {
-      display: none;
-    }
-
-    .attachments-panel.expanded {
-      display: flex;
-    }
-
-    #attachmentsList {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 4px;
-      max-height: 450px;
-    }
-
-    /* Add bulk export modal styles */
+    /* Bulk export modal */
     .bulk-export-modal {
       display: none;
       position: absolute;
@@ -647,176 +651,140 @@
       right: 0;
       width: 300px;
       height: 100%;
-      background: white;
-      border-left: 1px solid #ddd;
+      background: var(--card);
+      border-left: 1px solid var(--border);
       z-index: 1000;
       overflow-y: auto;
       transition: transform 0.3s ease;
       transform: translateX(100%);
+      box-shadow: var(--shadow-lg);
     }
-
-    .bulk-export-modal.show {
-      transform: translateX(0);
-    }
-    
-    .bulk-export-content {
-      padding: 20px;
-      height: 100%;
-      box-sizing: border-box;
-    }
-    
+    .bulk-export-modal.show { transform: translateX(0); }
+    .bulk-export-content { padding: 20px; height: 100%; box-sizing: border-box; }
     .bulk-export-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
-      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border);
       padding-bottom: 10px;
     }
-    
-    .bulk-export-title {
-      font-size: 16px;
-      font-weight: bold;
-      color: #1976d2;
-      margin: 0;
-    }
-    
+    .bulk-export-title { font-size: 15px; font-weight: 700; color: var(--accent); margin: 0; }
     .bulk-export-close {
       background: none;
       border: none;
-      font-size: 20px;
       cursor: pointer;
-      color: #666;
-      padding: 0;
+      color: var(--muted-foreground);
+      padding: 4px;
+      line-height: 0;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
     }
-    
-    .bulk-export-options {
-      margin-bottom: 15px;
-    }
-    
+    .bulk-export-close svg { width: 18px; height: 18px; }
+    .bulk-export-close:hover { color: var(--foreground); background: var(--muted); }
+    .bulk-export-options { margin-bottom: 14px; }
     .export-option {
       margin-bottom: 10px;
       padding: 10px;
-      background: #f5f5f5;
-      border-radius: 4px;
+      background: var(--muted);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
     }
-    
-    .export-option label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
+    .export-option label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; }
+    .export-option select {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid var(--input);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      font-size: 13px;
     }
-    
     .contacts-selection {
       max-height: 200px;
       overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       padding: 8px;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
     }
-    
     .contact-checkbox-item {
       display: flex;
       align-items: center;
       margin-bottom: 5px;
       padding: 5px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--border);
     }
-    
-    .contact-checkbox-item:last-child {
-      border-bottom: none;
-    }
-    
-    .contact-select-label {
-      margin-left: 8px;
-      font-size: 13px;
-    }
-    
-    .export-actions {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-    }
-    
-    .select-all-contacts {
-      display: flex;
-      align-items: center;
-    }
-    
-    .select-all-contacts label {
-      margin-left: 5px;
-      font-size: 13px;
-    }
-    
+    .contact-checkbox-item:last-child { border-bottom: none; }
+    .contact-checkbox-item input { accent-color: var(--accent); }
+    .contact-select-label { margin-left: 8px; font-size: 13px; }
+    .export-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+    .select-all-contacts { display: flex; align-items: center; margin-bottom: 6px; }
+    .select-all-contacts input { accent-color: var(--accent); }
+    .select-all-contacts label { margin-left: 6px; font-size: 13px; font-weight: 600; }
     .export-button {
-      padding: 8px 15px;
-      background: #4CAF50;
-      color: white;
+      padding: 8px 16px;
+      background: var(--primary);
+      color: #fff;
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 600;
+      font-size: 13px;
     }
-    
-    .export-button:disabled {
-      background: #cccccc;
-      cursor: not-allowed;
-    }
-    
-    .export-progress {
-      margin-top: 15px;
-      text-align: center;
-      display: none;
-    }
-    
-    .export-status {
-      margin-bottom: 10px;
-      font-weight: bold;
-      color: #1976d2;
-    }
+    .export-button:hover { background: var(--primary-hover); }
+    .export-button:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .export-progress { margin-top: 14px; text-align: center; display: none; }
+    .export-status { margin-bottom: 10px; font-weight: 600; color: var(--accent); font-size: 13px; }
 
-    /* Update main container styles for bulk export */
-    .main-container.with-bulk-export {
-      width: 600px;
-    }
+    .main-container.with-bulk-export { width: 660px; }
+    .modal-backdrop { display: none !important; }
 
-    /* Remove modal backdrop since we're using a slide-out panel */
-    .modal-backdrop {
-      display: none !important;
-    }
-
-    /* ZIP download section styles */
+    /* ZIP download section */
     .conv-zip-section {
       display: flex;
-      gap: 4px;
-      margin-top: 6px;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
       width: 100%;
     }
-    .conv-zip-select {
-      flex: 1;
-      padding: 6px 4px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      background: white;
-      font-size: 12px;
+    .conv-zip-formats {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
     }
-    .conv-zip-btn {
-      flex: 2;
-      padding: 6px 4px;
-      font-size: 12px;
+    .format-checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
     }
+    .format-checkbox input {
+      accent-color: var(--primary);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      margin: 0;
+    }
+    .conv-zip-btn { padding: 8px 12px; }
     .download-all-zip-btn {
       width: 100%;
-      margin-top: 6px;
+      margin-top: 8px;
       justify-content: center;
     }
     .zip-status {
       margin-top: 6px;
-      padding: 6px 8px;
-      background: #e6f3ff;
-      color: #0066cc;
-      border-radius: 4px;
+      padding: 6px 10px;
+      background: #eff6ff;
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-sm);
       font-size: 12px;
       text-align: center;
     }
@@ -827,7 +795,7 @@
     <div class="main-content">
   <div class="header-section">
     <h2>Fiverr Conversation Extractor</h2>
-    <button id="settingsBtn" class="settings-btn" title="Settings">⚙️</button>
+    <button id="settingsBtn" class="settings-btn" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
 
   <!-- Settings Modal -->
@@ -857,33 +825,38 @@
   </div>
 
       <div id="status" class="status progress">Ready to extract data...</div>
-      
-      <!-- New Progress Bar Component -->
+
+      <!-- Progress Bar -->
       <div id="progressBarContainer" class="progress-container" style="display: none;">
         <div id="progressBar" class="progress-bar"></div>
         <div id="progressLabel" class="progress-label">0%</div>
       </div>
-      
-      <!-- New Notification Container -->
+
+      <!-- Notification Container -->
       <div id="notificationContainer" class="notification-container"></div>
 
   <div id="conversationActions" class="conversation-actions" style="display: none;">
     <div id="currentConversation" class="current-conversation" style="display: none;"></div>
-    <button id="downloadBtn" class="action-button">📥 Download MD</button>
-    <button id="openBtn" class="action-button">📄 View MD</button>
-    <button id="downloadJsonBtn" class="action-button">📥 Download JSON</button>
-    <button id="viewJsonBtn" class="action-button">📄 View JSON</button>
-    <button id="downloadHtmlBtn" class="action-button">📥 Download HTML</button>
-    <button id="viewHtmlBtn" class="action-button">📄 View HTML</button>
-    <button id="viewAttachmentsBtn" class="action-button">📎 View Attachments (0)</button>
+    <div class="btn-row">
+      <button id="downloadBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download MD</button>
+      <button id="openBtn" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>View MD</button>
+    </div>
+    <div class="btn-row">
+      <button id="downloadJsonBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download JSON</button>
+      <button id="viewJsonBtn" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>View JSON</button>
+    </div>
+    <div class="btn-row">
+      <button id="downloadHtmlBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download HTML</button>
+      <button id="viewHtmlBtn" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>View HTML</button>
+    </div>
+    <button id="viewAttachmentsBtn" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>View Attachments (0)</button>
     <div class="conv-zip-section">
-      <select id="convZipFormat" class="conv-zip-select">
-        <option value="markdown">Markdown</option>
-        <option value="json">JSON</option>
-        <option value="html">HTML</option>
-        <option value="all">All Formats</option>
-      </select>
-      <button id="downloadConvWithAttachBtn" class="action-button conv-zip-btn">📦 Download Conv + Attachments (ZIP)</button>
+      <div class="conv-zip-formats">
+        <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipMd" value="markdown" checked> <span>Markdown</span></label>
+        <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipJson" value="json" checked> <span>JSON</span></label>
+        <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipHtml" value="html" checked> <span>HTML</span></label>
+      </div>
+      <button id="downloadConvWithAttachBtn" class="action-button conv-zip-btn"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Download Conv + Attachments (ZIP)</button>
     </div>
     <div id="convZipStatus" class="zip-status" style="display: none;"></div>
   </div>
@@ -892,15 +865,13 @@
       <button id="extractBtn" class="action-button">Extract Conversation</button>
       <div id="extractionProgress" class="progress-text" style="display: none;"></div>
     </div>
-    <div class="button-container">
-      <button id="fetchContactsBtn" class="action-button">👥 Fetch All Contacts</button>
-      <div id="contactsProgress" class="progress-text" style="display: none;"></div>
+    <div class="btn-row">
+      <button id="fetchContactsBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Fetch All Contacts</button>
+      <button id="toggleContacts" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>View Contacts (<span id="contactsCountBadge">0</span>)</button>
     </div>
+    <div id="contactsProgress" class="progress-text" style="display: none;"></div>
     <div class="button-container">
-      <button id="toggleContacts" class="action-button">👥 View Contacts (<span id="contactsCountBadge">0</span>)</button>
-    </div>
-    <div class="button-container">
-      <button id="bulkExportBtn" class="action-button">📦 Bulk Export Conversations</button>
+      <button id="bulkExportBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Bulk Export Conversations</button>
       <div id="bulkExportProgress" class="progress-text" style="display: none;">
         <div class="mini-progress-container">
           <div id="mainPanelExportProgress" class="progress-bar"></div>
@@ -940,7 +911,7 @@
           <span id="selectedCount" class="attachment-count">0</span>
         </button>
       </div>
-      <button id="downloadAllZipBtn" class="bulk-download-btn download-all-zip-btn">📦 Download All as ZIP</button>
+      <button id="downloadAllZipBtn" class="bulk-download-btn download-all-zip-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Download All as ZIP</button>
       <div id="attachZipStatus" class="zip-status" style="display: none;"></div>
       <div id="attachmentsList"></div>
     </div>
@@ -951,7 +922,7 @@
     <div class="bulk-export-content">
       <div class="bulk-export-header">
         <h2 class="bulk-export-title">Export Conversations</h2>
-        <button id="closeBulkExport" class="bulk-export-close">✖</button>
+        <button id="closeBulkExport" class="bulk-export-close"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
       <div class="bulk-export-options">
         <div class="export-option">
