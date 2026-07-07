@@ -74,7 +74,45 @@ async function convertToMarkdown(data) {
     if (message.body) {
       markdown += `${message.body}\n`;
     }
-    
+
+    // Add custom offer details if this is a custom_package message with fetched data
+    if (message.type === 'custom_package' && message.customPackageData && message.customPackageData.customPackage) {
+      const cp = message.customPackageData.customPackage;
+      markdown += `\n**📦 Custom Offer: ${cp.title || ''}**\n\n`;
+
+      markdown += `- **Price:** US$${cp.totalPrice || 0}\n`;
+      markdown += `- **Delivery:** ${cp.delivery || 0} Days\n`;
+      if (cp.revisions) {
+        markdown += `- **Revisions:** ${cp.revisions}\n`;
+      }
+      if (cp.status) {
+        markdown += `- **Status:** ${cp.status}\n`;
+      }
+      if (cp.encryptedOrderId) {
+        markdown += `- **Order ID:** ${cp.encryptedOrderId}\n`;
+      }
+      if (cp.expiredAt) {
+        markdown += `- **Offer expires on:** ${await formatDate(cp.expiredAt)}\n`;
+      }
+      markdown += '\n';
+
+      if (cp.description) {
+        markdown += `**Description:**\n${cp.description}\n\n`;
+      }
+
+      if (cp.contentItems && cp.contentItems.length > 0) {
+        markdown += `**What's Included:**\n`;
+        for (const item of cp.contentItems) {
+          if (item.count !== null && item.count !== undefined) {
+            markdown += `- ${item.title} - ${item.count}\n`;
+          } else {
+            markdown += `- ${item.title}\n`;
+          }
+        }
+        markdown += '\n';
+      }
+    }
+
     // Add attachments if any
     if (message.attachments && message.attachments.length > 0) {
       markdown += '\n**Attachments:**\n';
@@ -323,6 +361,31 @@ async function fetchConversation(username) {
 
       // Add a small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Fetch custom package data for custom_package type messages
+    const customPackageMessages = allMessages.filter(m => m.type === 'custom_package' && m.customPackageId);
+    if (customPackageMessages.length > 0) {
+      console.log(`Fetching custom package data for ${customPackageMessages.length} custom offer message(s)`);
+      for (const message of customPackageMessages) {
+        try {
+          const cpResponse = await fetch(`https://www.fiverr.com/custom_package/${message.customPackageId}`, {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+          if (cpResponse.ok) {
+            message.customPackageData = await cpResponse.json();
+          } else {
+            console.error(`Failed to fetch custom package ${message.customPackageId}: ${cpResponse.status}`);
+          }
+        } catch (cpError) {
+          console.error(`Error fetching custom package ${message.customPackageId}:`, cpError);
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
     // Create final processed data

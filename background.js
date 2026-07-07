@@ -135,6 +135,44 @@ async function convertToMarkdownBg(data) {
     if (message.body) {
       markdown += `${message.body}\n`;
     }
+
+    // Add custom offer details if this is a custom_package message with fetched data
+    if (message.type === 'custom_package' && message.customPackageData && message.customPackageData.customPackage) {
+      const cp = message.customPackageData.customPackage;
+      markdown += `\n**📦 Custom Offer: ${cp.title || ''}**\n\n`;
+
+      markdown += `- **Price:** US$${cp.totalPrice || 0}\n`;
+      markdown += `- **Delivery:** ${cp.delivery || 0} Days\n`;
+      if (cp.revisions) {
+        markdown += `- **Revisions:** ${cp.revisions}\n`;
+      }
+      if (cp.status) {
+        markdown += `- **Status:** ${cp.status}\n`;
+      }
+      if (cp.encryptedOrderId) {
+        markdown += `- **Order ID:** ${cp.encryptedOrderId}\n`;
+      }
+      if (cp.expiredAt) {
+        markdown += `- **Offer expires on:** ${await formatDate(cp.expiredAt)}\n`;
+      }
+      markdown += '\n';
+
+      if (cp.description) {
+        markdown += `**Description:**\n${cp.description}\n\n`;
+      }
+
+      if (cp.contentItems && cp.contentItems.length > 0) {
+        markdown += `**What's Included:**\n`;
+        for (const item of cp.contentItems) {
+          if (item.count !== null && item.count !== undefined) {
+            markdown += `- ${item.title} - ${item.count}\n`;
+          } else {
+            markdown += `- ${item.title}\n`;
+          }
+        }
+        markdown += '\n';
+      }
+    }
     
     // Add attachments if any
     if (message.attachments && message.attachments.length > 0) {
@@ -316,6 +354,62 @@ async function convertToHtmlBg(data) {
       font-size: 14px;
       display: inline-block;
     }
+    .custom-offer-box {
+      border: 2px solid #1dbf73;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      background: #f0fdf4;
+    }
+    .custom-offer-price {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1dbf73;
+      margin-bottom: 8px;
+    }
+    .custom-offer-title {
+      margin: 8px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+    .custom-offer-description {
+      margin: 10px 0;
+      color: #555;
+      white-space: pre-wrap;
+    }
+    .custom-offer-includes {
+      margin: 10px 0;
+    }
+    .custom-offer-includes-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .custom-offer-includes ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .custom-offer-includes li {
+      padding: 3px 0;
+      color: #555;
+    }
+    .custom-offer-includes li::before {
+      content: "✓ ";
+      color: #1dbf73;
+      font-weight: bold;
+    }
+    .custom-offer-footer {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #d1d5db;
+      font-size: 12px;
+      color: #999;
+    }
+    .custom-offer-footer a {
+      color: #1976d2;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -365,6 +459,58 @@ async function convertToHtmlBg(data) {
     // Add message body
     html += `
       <div class="message-text">${message.body || ''}</div>`;
+
+    // Add custom offer box if this is a custom_package message with fetched data
+    if (message.type === 'custom_package' && message.customPackageData && message.customPackageData.customPackage) {
+      const cp = message.customPackageData.customPackage;
+      html += `
+      <div class="custom-offer-box">
+        <div class="custom-offer-price">US$${cp.totalPrice || 0}</div>
+        <div class="custom-offer-title">${cp.title || ''}</div>`;
+      if (cp.description) {
+        html += `
+        <div class="custom-offer-description">${cp.description}</div>`;
+      }
+      if (cp.contentItems && cp.contentItems.length > 0) {
+        html += `
+        <div class="custom-offer-includes">
+          <div class="custom-offer-includes-title">Your offer includes</div>
+          <ul>`;
+        if (cp.revisions) {
+          html += `
+            <li>${cp.revisions} Revisions</li>`;
+        }
+        html += `
+            <li>${cp.delivery || 0} Days Delivery</li>`;
+        for (const item of cp.contentItems) {
+          if (item.count !== null && item.count !== undefined) {
+            html += `
+            <li>${item.title} - ${item.count}</li>`;
+          } else {
+            html += `
+            <li>${item.title}</li>`;
+          }
+        }
+        html += `
+          </ul>
+        </div>`;
+      }
+      html += `
+        <div class="custom-offer-footer">`;
+      if (cp.status) {
+        html += `Status: ${cp.status}`;
+      }
+      if (cp.expiredAt) {
+        const expiryTime = await formatDate(cp.expiredAt);
+        html += `<br>Offer expires on ${expiryTime}`;
+      }
+      if (cp.orderId) {
+        html += `<br><a href="https://www.fiverr.com/orders/${cp.orderId}" target="_blank" rel="noopener noreferrer">View order</a>`;
+      }
+      html += `
+        </div>
+      </div>`;
+    }
     
     // Add attachments if any
     if (message.attachments && message.attachments.length > 0) {
@@ -601,6 +747,61 @@ async function fetchAllContactsBg(tabId) {
   return allContacts;
 }
 
+// Function to fetch custom package data for custom_package type messages
+async function fetchCustomPackageBg(customPackageId, tabId) {
+  try {
+    const url = `https://www.fiverr.com/custom_package/${customPackageId}`;
+    console.log(`[CustomOffer] Fetching custom package from: ${url}`);
+
+    const fetchResult = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: async (url) => {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+          });
+
+          console.log(`[CustomOffer] Response status: ${response.status}, content-type: ${response.headers.get('content-type')}`);
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch custom package: ${response.status} ${response.statusText}`);
+          }
+
+          const text = await response.text();
+          console.log(`[CustomOffer] Response length: ${text.length}, first 200 chars: ${text.substring(0, 200)}`);
+
+          try {
+            return JSON.parse(text);
+          } catch (parseError) {
+            console.error(`[CustomOffer] JSON parse failed:`, parseError.message);
+            return { error: `JSON parse failed: ${parseError.message}` };
+          }
+        } catch (error) {
+          console.error(`[CustomOffer] Fetch error:`, error.message);
+          return { error: error.message };
+        }
+      },
+      args: [url]
+    });
+
+    if (!fetchResult || !fetchResult[0] || fetchResult[0].result.error) {
+      const errorMsg = fetchResult && fetchResult[0] ? fetchResult[0].result.error : 'No result from executeScript';
+      console.error(`[CustomOffer] Failed to fetch custom package ${customPackageId}: ${errorMsg}`);
+      return null;
+    }
+
+    console.log(`[CustomOffer] Successfully fetched custom package ${customPackageId}, has customPackage: ${!!fetchResult[0].result.customPackage}`);
+    return fetchResult[0].result;
+  } catch (error) {
+    console.error(`[CustomOffer] Error fetching custom package ${customPackageId}:`, error);
+    return null;
+  }
+}
+
 // Function to fetch conversation data with pagination in background
 async function fetchConversationBg(username, tabId) {
   try {
@@ -734,6 +935,19 @@ async function fetchConversationBg(username, tabId) {
 
       // Add a small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    // Fetch custom package data for custom_package type messages
+    const customPackageMessages = allMessages.filter(m => m.type === 'custom_package' && m.customPackageId);
+    console.log(`[CustomOffer] Found ${customPackageMessages.length} custom_package messages (out of ${allMessages.length} total)`);
+    console.log(`[CustomOffer] All message types:`, allMessages.map(m => ({ type: m.type, hasCpId: !!m.customPackageId, body: m.body?.substring(0, 50) })));
+    if (customPackageMessages.length > 0) {
+      console.log(`[CustomOffer] Fetching custom package data for ${customPackageMessages.length} custom offer message(s)`);
+      for (const message of customPackageMessages) {
+        message.customPackageData = await fetchCustomPackageBg(message.customPackageId, tabId);
+        console.log(`[CustomOffer] Result for ${message.customPackageId}:`, message.customPackageData ? 'SUCCESS' : 'FAILED (null)');
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
     // Create final processed data

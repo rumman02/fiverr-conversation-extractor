@@ -37,6 +37,7 @@ coverage/
 # Conversation data files
 conversation*.json
 *conversation.json
+conversation*.js
 
 # External dependency (not committed — must be provided separately)
 jszip.min.js
