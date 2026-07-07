@@ -124,7 +124,3 @@ No test files or test framework exist. To verify changes, manually test the exte
 | `downloads` | Download extracted conversations and attachments |
 | `tabs` | Query active tabs and open new tabs for viewing extracted data |
 | `host_permissions: fiverr.com` | Access Fiverr's API endpoints with session credentials |
-
-## License
-
-MIT License (see `LICENSE`).
