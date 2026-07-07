@@ -248,6 +248,16 @@
       gap: 4px;
     }
 
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted-foreground);
+      margin: 10px 0 6px;
+      padding: 0 2px;
+    }
+
     .current-conversation {
       text-align: center;
       font-weight: 600;
@@ -836,7 +846,15 @@
       <!-- Notification Container -->
       <div id="notificationContainer" class="notification-container"></div>
 
+  <!-- Extract Conversation -->
+  <div class="button-container">
+    <button id="extractBtn" class="action-button">Extract Conversation</button>
+    <div id="extractionProgress" class="progress-text" style="display: none;"></div>
+  </div>
+
+  <!-- Single contact downloads -->
   <div id="conversationActions" class="conversation-actions" style="display: none;">
+    <div class="section-title">Single contact downloads</div>
     <div id="currentConversation" class="current-conversation" style="display: none;"></div>
     <div class="btn-row">
       <button id="downloadBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download MD</button>
@@ -856,16 +874,16 @@
         <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipMd" value="markdown" checked> <span>Markdown</span></label>
         <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipJson" value="json" checked> <span>JSON</span></label>
         <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipHtml" value="html" checked> <span>HTML</span></label>
+        <label class="format-checkbox"><input type="checkbox" class="conv-zip-format-cb" id="convZipAttachments" value="attachments" checked> <span>Attachments</span></label>
       </div>
-      <button id="downloadConvWithAttachBtn" class="action-button conv-zip-btn"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Download Conv + Attachments (ZIP)</button>
+      <button id="downloadConvWithAttachBtn" class="action-button conv-zip-btn"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download</button>
     </div>
     <div id="convZipStatus" class="zip-status" style="display: none;"></div>
   </div>
+
+  <!-- Multi contact downloads -->
+  <div class="section-title">Multi contact downloads</div>
   <div class="main-actions">
-    <div class="button-container">
-      <button id="extractBtn" class="action-button">Extract Conversation</button>
-      <div id="extractionProgress" class="progress-text" style="display: none;"></div>
-    </div>
     <div class="btn-row">
       <button id="fetchContactsBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Fetch All Contacts</button>
       <button id="toggleContacts" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>View Contacts (<span id="contactsCountBadge">0</span>)</button>

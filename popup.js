@@ -1122,8 +1122,10 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        const formats = Array.from(document.querySelectorAll('.conv-zip-format-cb:checked')).map(cb => cb.value);
-        if (formats.length === 0) {
+        const allChecked = Array.from(document.querySelectorAll('.conv-zip-format-cb:checked')).map(cb => cb.value);
+        const includeAttachments = allChecked.includes('attachments');
+        const formats = allChecked.filter(f => f !== 'attachments');
+        if (formats.length === 0 && !includeAttachments) {
           showNotification('error', 'No Format Selected', 'Please select at least one format to include in the ZIP.');
           return;
         }
@@ -1131,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const statusEl = document.getElementById('convZipStatus');
         if (statusEl) {
-          statusEl.textContent = 'Preparing conversation + attachments ZIP...';
+          statusEl.textContent = 'Preparing download...';
           statusEl.style.display = 'block';
         }
         downloadConvWithAttachBtn.disabled = true;
@@ -1139,7 +1141,8 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.runtime.sendMessage({
           type: 'DOWNLOAD_CONVERSATION_WITH_ATTACHMENTS_ZIP',
           username: username,
-          format: formats
+          format: formats,
+          includeAttachments: includeAttachments
         }, function(response) {
           if (chrome.runtime.lastError) {
             console.error('Error sending ZIP request:', chrome.runtime.lastError);

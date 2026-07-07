@@ -1277,7 +1277,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Handle download conversation + attachments as ZIP
   else if (request.type === 'DOWNLOAD_CONVERSATION_WITH_ATTACHMENTS_ZIP') {
     console.log('Received DOWNLOAD_CONVERSATION_WITH_ATTACHMENTS_ZIP request');
-    downloadConversationWithAttachmentsZip(request.username, request.format);
+    downloadConversationWithAttachmentsZip(request.username, request.format, request.includeAttachments);
     sendResponse({ success: true });
     return true;
   }
@@ -2154,7 +2154,7 @@ async function downloadAllAttachmentsZip(username, attachments) {
 }
 
 // Function to download conversation + attachments as a single ZIP file
-async function downloadConversationWithAttachmentsZip(username, format) {
+async function downloadConversationWithAttachmentsZip(username, format, includeAttachments = true) {
   try {
     if (typeof JSZip === 'undefined') {
       chrome.runtime.sendMessage({
@@ -2222,48 +2222,53 @@ async function downloadConversationWithAttachmentsZip(username, format) {
       zip.file(`${username}.html`, html);
     }
 
-    // Collect all attachments from conversation messages
-    let attachments = [];
-    for (const message of data.messages) {
-      if (message.attachments && message.attachments.length > 0) {
-        for (const attachment of message.attachments) {
-          if (attachment.downloadUrl) {
-            attachments.push({
-              downloadUrl: attachment.downloadUrl,
-              filename: attachment.filename || attachment.file_name || `attachment_${attachments.length + 1}`
-            });
+    // Collect and fetch attachments if requested
+    let successCount = 0;
+    let failCount = 0;
+    let total = 0;
+
+    if (includeAttachments) {
+      // Collect all attachments from conversation messages
+      let attachments = [];
+      for (const message of data.messages) {
+        if (message.attachments && message.attachments.length > 0) {
+          for (const attachment of message.attachments) {
+            if (attachment.downloadUrl) {
+              attachments.push({
+                downloadUrl: attachment.downloadUrl,
+                filename: attachment.filename || attachment.file_name || `attachment_${attachments.length + 1}`
+              });
+            }
           }
         }
       }
-    }
 
-    // Fetch and add each attachment to the ZIP
-    let successCount = 0;
-    let failCount = 0;
-    const total = attachments.length;
+      // Fetch and add each attachment to the ZIP
+      total = attachments.length;
 
-    for (let i = 0; i < attachments.length; i++) {
-      const attachment = attachments[i];
-      const filename = attachment.filename;
+      for (let i = 0; i < attachments.length; i++) {
+        const attachment = attachments[i];
+        const filename = attachment.filename;
 
-      chrome.runtime.sendMessage({
-        type: 'CONV_ZIP_PROGRESS',
-        current: i + 1,
-        total: total,
-        message: `Fetching attachment ${i + 1} of ${total}: ${filename}`
-      });
+        chrome.runtime.sendMessage({
+          type: 'CONV_ZIP_PROGRESS',
+          current: i + 1,
+          total: total,
+          message: `Fetching attachment ${i + 1} of ${total}: ${filename}`
+        });
 
-      try {
-        const response = await fetch(attachment.downloadUrl);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+        try {
+          const response = await fetch(attachment.downloadUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const blob = await response.blob();
+          zip.file(`attachments/${filename}`, blob);
+          successCount++;
+        } catch (fetchError) {
+          console.error(`Failed to fetch attachment ${filename}:`, fetchError);
+          failCount++;
         }
-        const blob = await response.blob();
-        zip.file(`attachments/${filename}`, blob);
-        successCount++;
-      } catch (fetchError) {
-        console.error(`Failed to fetch attachment ${filename}:`, fetchError);
-        failCount++;
       }
     }
 
