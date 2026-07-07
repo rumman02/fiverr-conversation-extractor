@@ -617,12 +617,9 @@ function loadStoredContacts() {
   chrome.storage.local.get(['allContacts', 'lastContactsFetch', 'lastContactCount'], function(result) {
     if (result.allContacts && result.allContacts.length > 0) {
       displayContacts(result.allContacts).catch(console.error);
-      
+
       // Use the actual contacts length for the counter
       updateContactCounter(result.allContacts.length);
-      
-      // Also populate the contacts for export when contacts are loaded
-      populateContactsForExport();
       
       // Show last fetch time if available
       if (result.lastContactsFetch) {
@@ -1163,24 +1160,6 @@ document.addEventListener('DOMContentLoaded', () => {
     panelDownloadSelectedBtn.addEventListener('click', startBulkExportFromPanel);
   }
 
-  // Bulk export button
-  const bulkExportBtn = document.getElementById('bulkExportBtn');
-  if (bulkExportBtn) {
-    bulkExportBtn.addEventListener('click', openBulkExportModal);
-  }
-  
-  // Close bulk export modal
-  const closeBulkExport = document.getElementById('closeBulkExport');
-  if (closeBulkExport) {
-    closeBulkExport.addEventListener('click', closeBulkExportModal);
-  }
-  
-  // Start export button
-  const exportButton = document.getElementById('exportButton');
-  if (exportButton) {
-    exportButton.addEventListener('click', startBulkExport);
-  }
-
   // Download all attachments as ZIP
   const downloadAllZipBtn = document.getElementById('downloadAllZipBtn');
   if (downloadAllZipBtn) {
@@ -1462,137 +1441,6 @@ function clearAllNotifications() {
   }
 }
 
-// Add bulk export functions
-let selectedContactsForExport = new Set();
-
-function openBulkExportModal() {
-  const modal = document.getElementById('bulkExportModal');
-  const mainContainer = document.querySelector('.main-container');
-  
-  // Add show class to animate the panel
-  modal.style.display = 'block';
-  setTimeout(() => {
-    modal.classList.add('show');
-    mainContainer.classList.add('with-bulk-export');
-  }, 10);
-  
-  // Populate contacts
-  populateContactsForExport();
-}
-
-function closeBulkExportModal() {
-  const modal = document.getElementById('bulkExportModal');
-  const mainContainer = document.querySelector('.main-container');
-  
-  // Remove show class to animate the panel
-  modal.classList.remove('show');
-  mainContainer.classList.remove('with-bulk-export');
-  
-  // Hide after animation
-  setTimeout(() => {
-    modal.style.display = 'none';
-  }, 300);
-  
-  // Reset the modal to its initial state
-  document.getElementById('exportProgress').style.display = 'none';
-  document.getElementById('exportButton').disabled = false;
-  
-  // Stop checking for export status updates
-  stopExportStatusChecking();
-}
-
-function populateContactsForExport() {
-  const contactsSelection = document.getElementById('contactsSelection');
-  contactsSelection.innerHTML = '';
-  
-  // Get stored contacts
-  chrome.storage.local.get(['allContacts'], function(result) {
-    const contacts = result.allContacts || [];
-    
-    if (contacts.length === 0) {
-      contactsSelection.innerHTML = '<div class="no-contacts">No contacts found. Please fetch contacts first.</div>';
-      document.getElementById('exportButton').disabled = true;
-      return;
-    }
-    
-    // Enable the export button
-    document.getElementById('exportButton').disabled = false;
-    
-    // Clear the selected contacts
-    selectedContactsForExport.clear();
-    
-    // Create a checkbox for each contact
-    contacts.forEach(contact => {
-      const username = contact.username || 'Unknown User';
-      
-      const contactItem = document.createElement('div');
-      contactItem.className = 'contact-checkbox-item';
-      
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.id = `export-contact-${username}`;
-      checkbox.dataset.username = username;
-      checkbox.className = 'contact-export-checkbox';
-      
-      checkbox.addEventListener('change', function() {
-        if (this.checked) {
-          selectedContactsForExport.add(username);
-        } else {
-          selectedContactsForExport.delete(username);
-        }
-        
-        // Update the "Select All" checkbox
-        updateSelectAllCheckbox();
-      });
-      
-      const label = document.createElement('label');
-      label.className = 'contact-select-label';
-      label.htmlFor = `export-contact-${username}`;
-      label.textContent = username;
-      
-      contactItem.appendChild(checkbox);
-      contactItem.appendChild(label);
-      contactsSelection.appendChild(contactItem);
-    });
-    
-    // Setup the "Select All" checkbox behavior
-    setupSelectAllContactsExport();
-  });
-}
-
-function updateSelectAllCheckbox() {
-  const allCheckboxes = document.querySelectorAll('.contact-export-checkbox');
-  const selectAllCheckbox = document.getElementById('selectAllContactsExport');
-  
-  if (allCheckboxes.length === selectedContactsForExport.size) {
-    selectAllCheckbox.checked = true;
-    selectAllCheckbox.indeterminate = false;
-  } else if (selectedContactsForExport.size === 0) {
-    selectAllCheckbox.checked = false;
-    selectAllCheckbox.indeterminate = false;
-  } else {
-    selectAllCheckbox.indeterminate = true;
-  }
-}
-
-function setupSelectAllContactsExport() {
-  const selectAllCheckbox = document.getElementById('selectAllContactsExport');
-  
-  selectAllCheckbox.addEventListener('change', function() {
-    const allCheckboxes = document.querySelectorAll('.contact-export-checkbox');
-    
-    allCheckboxes.forEach(checkbox => {
-      checkbox.checked = this.checked;
-      
-      if (this.checked) {
-        selectedContactsForExport.add(checkbox.dataset.username);
-      } else {
-        selectedContactsForExport.delete(checkbox.dataset.username);
-      }
-    });
-  });
-}
-
 // Start bulk export for contacts selected in the side panel, using the
 // checked format checkboxes (Markdown / JSON / HTML / Attachments).
 async function startBulkExportFromPanel() {
@@ -1665,94 +1513,6 @@ async function startBulkExportFromPanel() {
   }
 }
 
-async function startBulkExport() {
-  // Check if an export is already running
-  let exportAlreadyRunning = false;
-  
-  try {
-    const statusResponse = await new Promise(resolve => {
-      chrome.runtime.sendMessage({ type: 'GET_BULK_EXPORT_STATUS' }, status => {
-        resolve(status);
-      });
-    });
-    
-    if (statusResponse && statusResponse.status === 'running') {
-      document.getElementById('exportStatus').textContent = 'An export is already running. Please wait for it to complete.';
-      // Update UI to reflect current status
-      document.getElementById('exportButton').disabled = true;
-      document.getElementById('exportProgress').style.display = 'block';
-      startExportStatusChecking();
-      return;
-    }
-  } catch (err) {
-    console.error("Error checking export status:", err);
-  }
-  
-  // Validate that at least one contact is selected
-  if (selectedContactsForExport.size === 0) {
-    document.getElementById('exportStatus').textContent = 'Please select at least one contact.';
-    return;
-  }
-  
-  // Get export options
-  const format = document.getElementById('exportFormat').value;
-  const includeAttachments = document.getElementById('includeAttachments').checked;
-  
-  try {
-    // Get the active tab
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    const activeTab = tabs[0];
-    
-    // Validate that we have an active Fiverr tab
-    if (!activeTab || !activeTab.url || !activeTab.url.includes('fiverr.com')) {
-      throw new Error('Please open Fiverr in the active tab before starting the export.');
-    }
-    
-    // Disable the export button and show progress
-    document.getElementById('exportButton').disabled = true;
-    document.getElementById('exportProgress').style.display = 'block';
-    document.getElementById('exportStatus').textContent = 'Starting export in background...';
-    
-    // Convert Set to Array for easier processing
-    const contactsToExport = Array.from(selectedContactsForExport).map(username => {
-      return { username };
-    });
-    
-    // Send the export request to the background script
-    chrome.runtime.sendMessage({
-      type: 'START_BULK_EXPORT',
-      contacts: contactsToExport,
-      format: format,
-      includeAttachments: includeAttachments,
-      tabId: activeTab.id
-    }, response => {
-      if (chrome.runtime.lastError) {
-        console.error('Runtime error:', chrome.runtime.lastError);
-        document.getElementById('exportStatus').textContent = 'Failed to start export: ' + chrome.runtime.lastError.message;
-        document.getElementById('exportButton').disabled = false;
-        return;
-      }
-      
-      console.log('Bulk export started:', response);
-      
-      if (response && response.success) {
-        document.getElementById('exportStatus').textContent = 'Export running in background. You can close this popup.';
-        
-        // Start a timer to check status initially
-        startExportStatusChecking();
-      } else {
-        const errorMsg = response?.message || 'Failed to start export. Please try again.';
-        document.getElementById('exportStatus').textContent = errorMsg;
-        document.getElementById('exportButton').disabled = false;
-      }
-    });
-  } catch (error) {
-    console.error('Error starting bulk export:', error);
-    document.getElementById('exportStatus').textContent = `Error: ${error.message}`;
-    document.getElementById('exportButton').disabled = false;
-  }
-}
-
 // Update the export status checking function to use the flag
 function startExportStatusChecking() {
   // Reset interval if already running
@@ -1795,70 +1555,28 @@ function checkBulkExportStatus() {
   chrome.runtime.sendMessage({ type: 'GET_BULK_EXPORT_STATUS' }, status => {
     if (status && status.status) {
       console.log('Current bulk export status:', status);
-      
+
       // Update the main panel progress indicator regardless of status
       updateMainPanelExportProgress(status);
-      
-      // If there's an active export, show the export modal with current status
+
       if (status.status === 'running') {
-        // Open the bulk export modal
-        document.getElementById('bulkExportModal').style.display = 'block';
-        
-        // Show the progress section
-        const exportProgress = document.getElementById('exportProgress');
-        exportProgress.style.display = 'block';
-        
-        // Update the progress bar
-        const progressBar = document.getElementById('exportProgressBar');
-        const progressLabel = document.getElementById('exportProgressLabel');
-        const statusElement = document.getElementById('exportStatus');
-        
-        progressBar.style.width = `${status.progress}%`;
-        progressLabel.textContent = `${status.progress}%`;
-        
-        // Disable the export button
-        document.getElementById('exportButton').disabled = true;
-        
-        // Update status message
-        let statusMessage = `Export in progress: ${status.completed} of ${status.total} conversations exported.`;
-        if (status.current) {
-          statusMessage += ` Currently processing: ${status.current}`;
+        // Ensure we're polling for updates
+        if (!exportStatusInterval) {
+          startExportStatusChecking();
         }
-        statusMessage += ' You can close this popup and the export will continue in the background.';
-        statusElement.textContent = statusMessage;
-        
-        // Start checking for updates
-        startExportStatusChecking();
-        
-        // If we have contacts data, populate the contacts selection
-        if (status.contacts && status.contacts.length > 0) {
-          // Populate the contacts selection with the current export contacts
-          const contactsSelection = document.getElementById('contactsSelection');
-          contactsSelection.innerHTML = '';
-          
-          // Create a Set of selected usernames for easy lookup
-          const selectedUsernames = new Set(status.contacts.map(contact => contact.username));
-          
-          // Update the global selectedContactsForExport Set
-          selectedContactsForExport = selectedUsernames;
-        }
-      } 
+      }
       // Only show completed/error notifications if:
       // 1. It's not the first check after popup opens (to avoid notification on every reopen)
       // 2. The status is recent (completed in the last 5 minutes)
       else if (!isFirstCheck && status.timestamp && (Date.now() - status.timestamp < 300000)) {
-        // If the export just completed, show a notification
         if (status.status === 'completed') {
-          // Show a notification if the export completed in the last 5 minutes
-          showNotification('success', 'Bulk Export Completed', 
+          showNotification('success', 'Bulk Export Completed',
             `Successfully exported ${status.completed} conversations.`);
-        }
-        // If there was an error, show a notification
-        else if (status.status === 'error') {
-          // Show a notification if the error occurred in the last 5 minutes
-          showNotification('error', 'Bulk Export Error', 
+        } else if (status.status === 'error') {
+          showNotification('error', 'Bulk Export Error',
             status.message || 'An error occurred during the bulk export.');
         }
+        stopExportStatusChecking();
       }
     }
   });
@@ -1894,14 +1612,10 @@ function updateMainPanelExportProgress(status) {
   // Update the status text based on the export status
   if (status.status === 'running') {
     mainPanelExportStatus.textContent = `Exporting: ${completed}/${total} (${status.progress}%)`;
-    // Make the Bulk Export button look active
-    document.getElementById('bulkExportBtn').style.backgroundColor = '#1976d2';
   } else if (status.status === 'completed') {
     mainPanelExportStatus.textContent = `Export completed: ${completed} conversation${completed !== 1 ? 's' : ''}`;
-    // Reset the button color after a delay
+    // Hide the progress after showing completion for a while
     setTimeout(() => {
-      document.getElementById('bulkExportBtn').style.backgroundColor = '';
-      // Hide the progress after showing completion for a while
       if (Date.now() - status.timestamp > 60000) { // Hide after 1 minute
         bulkExportProgress.style.display = 'none';
       }
@@ -1911,8 +1625,6 @@ function updateMainPanelExportProgress(status) {
     if (panelBtn) panelBtn.disabled = panelSelectedContacts.size === 0;
   } else if (status.status === 'error') {
     mainPanelExportStatus.textContent = 'Export error: ' + (status.message || 'Unknown error');
-    // Reset the button color
-    document.getElementById('bulkExportBtn').style.backgroundColor = '';
     // Re-enable the contacts panel download button
     const panelBtn = document.getElementById('panelDownloadSelectedBtn');
     if (panelBtn) panelBtn.disabled = panelSelectedContacts.size === 0;

@@ -628,10 +628,8 @@
       flex-direction: column;
       padding: 0;
       box-sizing: border-box;
-      margin-top: 10px;
-      height: 500px;
     }
-    .side-panel.expanded { width: 300px; padding: 8px 8px 8px 16px; }
+    .side-panel.expanded { width: 300px; padding: 12px 8px 12px 16px; }
     .panel-header {
       display: flex;
       justify-content: space-between;
@@ -649,7 +647,7 @@
       color: var(--accent);
       font-weight: 600;
     }
-    .contacts-list { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
+    .contacts-list { flex: 1; overflow-y: auto; padding-right: 4px; min-height: 0; }
 
     /* Contacts panel search */
     .contact-search-input {
@@ -690,9 +688,12 @@
     .contact-item-body { flex: 1; min-width: 0; }
     .contact-item.selected { background: #eff6ff; border-color: var(--accent); }
     .panel-export-footer {
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-      margin-top: 6px;
+      margin: 6px 0;
+      padding: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -711,103 +712,8 @@
 
     .attachments-panel { display: none; }
     .attachments-panel.expanded { display: flex; }
-    #attachmentsList { flex: 1; overflow-y: auto; padding-right: 4px; max-height: 450px; }
+    #attachmentsList { flex: 1; overflow-y: auto; padding-right: 4px; min-height: 0; }
 
-    /* Bulk export modal */
-    .bulk-export-modal {
-      display: none;
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 300px;
-      height: 100%;
-      background: var(--card);
-      border-left: 1px solid var(--border);
-      z-index: 1000;
-      overflow-y: auto;
-      transition: transform 0.3s ease;
-      transform: translateX(100%);
-      box-shadow: var(--shadow-lg);
-    }
-    .bulk-export-modal.show { transform: translateX(0); }
-    .bulk-export-content { padding: 20px; height: 100%; box-sizing: border-box; }
-    .bulk-export-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 10px;
-    }
-    .bulk-export-title { font-size: 15px; font-weight: 700; color: var(--accent); margin: 0; }
-    .bulk-export-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted-foreground);
-      padding: 4px;
-      line-height: 0;
-      border-radius: var(--radius-sm);
-      display: flex;
-      align-items: center;
-    }
-    .bulk-export-close svg { width: 18px; height: 18px; }
-    .bulk-export-close:hover { color: var(--foreground); background: var(--muted); }
-    .bulk-export-options { margin-bottom: 14px; }
-    .export-option {
-      margin-bottom: 10px;
-      padding: 10px;
-      background: var(--muted);
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-    }
-    .export-option label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; }
-    .export-option select {
-      width: 100%;
-      padding: 7px 10px;
-      border: 1px solid var(--input);
-      border-radius: var(--radius-sm);
-      background: var(--card);
-      font-size: 13px;
-    }
-    .contacts-selection {
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px;
-      margin-bottom: 14px;
-    }
-    .contact-checkbox-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-      padding: 5px;
-      border-bottom: 1px solid var(--border);
-    }
-    .contact-checkbox-item:last-child { border-bottom: none; }
-    .contact-checkbox-item input { accent-color: var(--accent); }
-    .contact-select-label { margin-left: 8px; font-size: 13px; }
-    .export-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
-    .select-all-contacts { display: flex; align-items: center; margin-bottom: 6px; }
-    .select-all-contacts input { accent-color: var(--accent); }
-    .select-all-contacts label { margin-left: 6px; font-size: 13px; font-weight: 600; }
-    .export-button {
-      padding: 8px 16px;
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 13px;
-    }
-    .export-button:hover { background: var(--primary-hover); }
-    .export-button:disabled { background: #cbd5e1; cursor: not-allowed; }
-    .export-progress { margin-top: 14px; text-align: center; display: none; }
-    .export-status { margin-bottom: 10px; font-weight: 600; color: var(--accent); font-size: 13px; }
-
-    .main-container.with-bulk-export { width: 660px; }
     .modal-backdrop { display: none !important; }
 
     /* ZIP download section */
@@ -948,15 +854,21 @@
       <button id="toggleContacts" class="action-button btn-outline"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>View Contacts (<span id="contactsCountBadge">0</span>)</button>
     </div>
     <div id="contactsProgress" class="progress-text" style="display: none;"></div>
-    <div class="button-container">
-      <button id="bulkExportBtn" class="action-button"><svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Bulk Export Conversations</button>
-      <div id="bulkExportProgress" class="progress-text" style="display: none;">
-        <div class="mini-progress-container">
-          <div id="mainPanelExportProgress" class="progress-bar"></div>
-        </div>
-        <span id="mainPanelExportStatus"></span>
-      </div>
+  </div>
+  <div class="panel-export-footer">
+    <div class="panel-format-checkboxes">
+      <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="markdown" checked> <span>Markdown</span></label>
+      <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="json" checked> <span>JSON</span></label>
+      <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="html" checked> <span>HTML</span></label>
+      <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="attachments" checked> <span>Files</span></label>
     </div>
+    <button id="panelDownloadSelectedBtn" class="action-button" disabled>Download Selected (<span id="panelSelectedCount">0</span>)</button>
+  </div>
+  <div id="bulkExportProgress" class="progress-text" style="display: none;">
+    <div class="mini-progress-container">
+      <div id="mainPanelExportProgress" class="progress-bar"></div>
+    </div>
+    <span id="mainPanelExportStatus"></span>
   </div>
   <div id="progressCounter" class="progress-counter" style="display: none;">
     Total Contacts: <span id="contactCount">0</span>
@@ -976,15 +888,6 @@
         <label for="selectAllPanelContacts">Select All</label>
       </div>
     <div id="contactsList" class="contacts-list"></div>
-      <div class="panel-export-footer">
-        <div class="panel-format-checkboxes">
-          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="markdown" checked> <span>Markdown</span></label>
-          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="json" checked> <span>JSON</span></label>
-          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="html" checked> <span>HTML</span></label>
-          <label class="format-checkbox"><input type="checkbox" class="panel-format-cb" value="attachments" checked> <span>Files</span></label>
-        </div>
-        <button id="panelDownloadSelectedBtn" class="action-button" disabled>Download Selected (<span id="panelSelectedCount">0</span>)</button>
-      </div>
     </div>
 
     <!-- Attachments Panel -->
@@ -1006,50 +909,6 @@
       <button id="downloadAllZipBtn" class="bulk-download-btn download-all-zip-btn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>Download All as ZIP</button>
       <div id="attachZipStatus" class="zip-status" style="display: none;"></div>
       <div id="attachmentsList"></div>
-    </div>
-  </div>
-
-  <!-- Bulk Export Modal -->
-  <div id="bulkExportModal" class="bulk-export-modal">
-    <div class="bulk-export-content">
-      <div class="bulk-export-header">
-        <h2 class="bulk-export-title">Export Conversations</h2>
-        <button id="closeBulkExport" class="bulk-export-close"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-      </div>
-      <div class="bulk-export-options">
-        <div class="export-option">
-          <label for="exportFormat">Export Format:</label>
-          <select id="exportFormat">
-            <option value="all">All Formats (MD, JSON, HTML)</option>
-            <option value="both">Both Markdown & JSON</option>
-            <option value="markdown">Markdown Only</option>
-            <option value="json">JSON Only</option>
-            <option value="html">HTML Only</option>
-          </select>
-        </div>
-        <div class="export-option">
-          <label for="includeAttachments">Include Attachments:</label>
-          <input type="checkbox" id="includeAttachments" checked>
-          <label for="includeAttachments"> Download attachments with conversations</label>
-        </div>
-      </div>
-      <div class="contacts-selection">
-        <div class="select-all-contacts">
-          <input type="checkbox" id="selectAllContactsExport">
-          <label for="selectAllContactsExport">Select All Contacts</label>
-        </div>
-        <div id="contactsSelection"></div>
-      </div>
-      <div class="export-actions">
-        <button id="exportButton" class="export-button">Start Export</button>
-      </div>
-      <div id="exportProgress" class="export-progress">
-        <div class="progress-container">
-          <div id="exportProgressBar" class="progress-bar"></div>
-          <div id="exportProgressLabel" class="progress-label">0%</div>
-        </div>
-        <div id="exportStatus" class="export-status"></div>
-      </div>
     </div>
   </div>
 
