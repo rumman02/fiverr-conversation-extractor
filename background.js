@@ -751,7 +751,6 @@ async function fetchAllContactsBg(tabId) {
 async function fetchCustomPackageBg(customPackageId, tabId) {
   try {
     const url = `https://www.fiverr.com/custom_package/${customPackageId}`;
-    console.log(`[CustomOffer] Fetching custom package from: ${url}`);
 
     const fetchResult = await chrome.scripting.executeScript({
       target: { tabId: tabId },
@@ -765,23 +764,12 @@ async function fetchCustomPackageBg(customPackageId, tabId) {
             credentials: 'include'
           });
 
-          console.log(`[CustomOffer] Response status: ${response.status}, content-type: ${response.headers.get('content-type')}`);
-
           if (!response.ok) {
             throw new Error(`Failed to fetch custom package: ${response.status} ${response.statusText}`);
           }
 
-          const text = await response.text();
-          console.log(`[CustomOffer] Response length: ${text.length}, first 200 chars: ${text.substring(0, 200)}`);
-
-          try {
-            return JSON.parse(text);
-          } catch (parseError) {
-            console.error(`[CustomOffer] JSON parse failed:`, parseError.message);
-            return { error: `JSON parse failed: ${parseError.message}` };
-          }
+          return await response.json();
         } catch (error) {
-          console.error(`[CustomOffer] Fetch error:`, error.message);
           return { error: error.message };
         }
       },
@@ -794,7 +782,6 @@ async function fetchCustomPackageBg(customPackageId, tabId) {
       return null;
     }
 
-    console.log(`[CustomOffer] Successfully fetched custom package ${customPackageId}, has customPackage: ${!!fetchResult[0].result.customPackage}`);
     return fetchResult[0].result;
   } catch (error) {
     console.error(`[CustomOffer] Error fetching custom package ${customPackageId}:`, error);
@@ -939,13 +926,10 @@ async function fetchConversationBg(username, tabId) {
 
     // Fetch custom package data for custom_package type messages
     const customPackageMessages = allMessages.filter(m => m.type === 'custom_package' && m.customPackageId);
-    console.log(`[CustomOffer] Found ${customPackageMessages.length} custom_package messages (out of ${allMessages.length} total)`);
-    console.log(`[CustomOffer] All message types:`, allMessages.map(m => ({ type: m.type, hasCpId: !!m.customPackageId, body: m.body?.substring(0, 50) })));
     if (customPackageMessages.length > 0) {
       console.log(`[CustomOffer] Fetching custom package data for ${customPackageMessages.length} custom offer message(s)`);
       for (const message of customPackageMessages) {
         message.customPackageData = await fetchCustomPackageBg(message.customPackageId, tabId);
-        console.log(`[CustomOffer] Result for ${message.customPackageId}:`, message.customPackageData ? 'SUCCESS' : 'FAILED (null)');
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
