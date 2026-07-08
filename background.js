@@ -1734,17 +1734,17 @@ async function downloadAttachmentsDirectly(conversation, username, folderPrefix)
               if (!response.ok) throw new Error(`Failed to fetch attachment: ${response.statusText}`);
               return response.blob();
             })
-            .then(blob => {
+            .then(async blob => {
               // Create a safe filename using the correct property
-              const filename = attachment.filename || 
-                             attachment.file_name || 
-                             attachment.name || 
-                             attachment.downloadUrl.split('/').pop() || 
+              const filename = attachment.filename ||
+                             attachment.file_name ||
+                             attachment.name ||
+                             attachment.downloadUrl.split('/').pop() ||
                              `attachment-${Date.now()}`;
-              
+
               // Create a safe path
               const safePath = `${folderPrefix}/attachments/${filename}`.replace(/[<>:"/\\|?*]/g, '_');
-              
+
               // Encode blob as base64 data URL and download
               const arrayBuffer = await blob.arrayBuffer();
               const base64 = arrayBufferToBase64(arrayBuffer);
